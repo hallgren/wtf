@@ -2,8 +2,11 @@ package wtf
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
+
+	"github.com/hallgren/eventsourcing"
 )
 
 // Dial constants.
@@ -23,6 +26,9 @@ const (
 //
 // See the EventService for more information about notifications.
 type Dial struct {
+	// include the eventsourcing.AggregateRoot to enable to handle events to state translate the dial entity
+	eventsourcing.AggregateRoot
+
 	ID int `json:"id"`
 
 	// Owner of the dial. Only the owner may delete the dial.
@@ -47,6 +53,68 @@ type Dial struct {
 	// List of associated members and their contributing WTF level.
 	// This is only set when returning a single dial.
 	Memberships []*DialMembership `json:"memberships,omitempty"`
+}
+
+// Created event happends when the dial is first created
+type Created struct {
+	ID         int
+	OwnerID    int
+	Name       string
+	InviteCode string
+}
+
+// SelfMembershipCreated event is attached when the dial is created
+type SelfMembershipCreated struct {
+	ID    int
+	Value int
+}
+
+// MembershipCreated event when a user is adding a dial membership
+type MembershipCreated struct {
+	ID     int
+	UserID int
+	Value  int
+}
+
+// Transition builds the dial entity from its events
+func (d *Dial) Transition(event eventsourcing.Event) {
+	switch e := event.Data.(type) {
+	case *Created:
+		d.ID = e.ID
+		d.Name = e.Name
+		d.CreatedAt = event.Timestamp
+		d.UserID = e.OwnerID
+		d.InviteCode = e.InviteCode
+		d.Memberships = make([]*DialMembership, 0)
+		d.UpdatedAt = event.Timestamp
+
+	case *SelfMembershipCreated:
+		membership := DialMembership{ID: e.ID, Value: e.Value}
+		d.Memberships = append(d.Memberships, &membership)
+		d.UpdatedAt = event.Timestamp
+
+	case *MembershipCreated:
+		membership := DialMembership{ID: e.ID, Value: e.Value, UserID: e.UserID}
+		d.Memberships = append(d.Memberships, &membership)
+		d.UpdatedAt = event.Timestamp
+	}
+
+	// calculate the dial value from the Memberships after the dial entity is built from all events
+	value := 0
+	for _, m := range d.Memberships {
+		value += m.Value
+	}
+	d.Value = value
+}
+
+func NewDial(userID, value int, name string) (*Dial, error) {
+	if name == "" {
+		return nil, errors.New("name can't be empty")
+	}
+	dial := Dial{}
+	dial.TrackChange(&dial, &Created{ID: 1, OwnerID: userID, Name: name, InviteCode: "123"})
+	dial.TrackChange(&dial, &SelfMembershipCreated{ID: 1, Value: value})
+	return &dial, nil
 }
 
 // MembershipByUserID returns the membership attached to the dial for a given user.

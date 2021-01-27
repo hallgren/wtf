@@ -11,11 +11,13 @@ import (
 	"time"
 
 	"github.com/benbjohnson/wtf"
+	"github.com/hallgren/eventsourcing"
 )
 
 // DialService represents a service for managing dials.
 type DialService struct {
-	db *DB
+	db   *DB
+	repo *eventsourcing.Repository
 }
 
 // NewDialService returns a new instance of DialService.
