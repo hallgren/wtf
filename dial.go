@@ -94,17 +94,26 @@ func (d *Dial) Transition(event eventsourcing.Event) {
 		d.UpdatedAt = event.Timestamp
 
 	case *MembershipCreated:
-		membership := DialMembership{ID: e.ID, Value: e.Value, UserID: e.UserID}
+		membership := DialMembership{
+			ID:        e.ID,
+			Value:     e.Value,
+			UserID:    e.UserID,
+			CreatedAt: event.Timestamp,
+			UpdatedAt: event.Timestamp,
+		}
 		d.Memberships = append(d.Memberships, &membership)
 		d.UpdatedAt = event.Timestamp
 	}
 
 	// calculate the dial value from the Memberships after the dial entity is built from all events
-	value := 0
-	for _, m := range d.Memberships {
-		value += m.Value
+	// this is calculated on every event but the final event will be the final result of the Value on the dial
+	if len(d.Memberships) > 0 {
+		value := 0
+		for _, m := range d.Memberships {
+			value += m.Value
+		}
+		d.Value = value / len(d.Memberships)
 	}
-	d.Value = value
 }
 
 func NewDial(userID, value int, name string) (*Dial, error) {

@@ -14,10 +14,12 @@ require (
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/websocket v1.4.2
 	github.com/hallgren/eventsourcing v0.0.13
+	github.com/hallgren/eventsourcing/eventstore/sql v0.0.4 // indirect
 	github.com/mattn/go-sqlite3 v1.14.4
 	github.com/pelletier/go-toml v1.8.1
 	github.com/prometheus/client_golang v1.9.0
 	github.com/rollbar/rollbar-go v1.2.0
+	golang.org/dl v0.0.0-20210128152142-7744cb1878f1 // indirect
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/oauth2 v0.0.0-20201109201403-9fd604954f58
 )

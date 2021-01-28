@@ -2,6 +2,7 @@ package sqlite_test
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"strings"
 	"testing"
@@ -9,6 +10,8 @@ import (
 
 	"github.com/benbjohnson/wtf"
 	"github.com/benbjohnson/wtf/sqlite"
+	"github.com/hallgren/eventsourcing"
+	essql "github.com/hallgren/eventsourcing/eventstore/sql"
 )
 
 func TestDialService_CreateDial(t *testing.T) {
@@ -20,8 +23,16 @@ func TestDialService_CreateDial(t *testing.T) {
 		ctx := context.Background()
 		_, ctx0 := MustCreateUser(t, ctx, db, &wtf.User{Name: "jane", Email: "jane@gmail.com"})
 
-		s := sqlite.NewDialService(db)
-		dial := &wtf.Dial{Name: "mydial"}
+		ser := eventsourcing.NewSerializer(json.Marshal, json.Unmarshal)
+		es := essql.Open(db.DB(), *ser)
+		err := es.Migrate()
+		repo := eventsourcing.NewRepository(es, nil)
+		s := sqlite.NewDialService(db, repo)
+		//dial := &wtf.Dial{Name: "mydial"}
+		dial, err := wtf.NewDial(1, 23, "123")
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		// Create new dial. Ensure the current user is the owner & an invite code is generated.
 		if err := s.CreateDial(ctx0, dial); err != nil {
@@ -61,7 +72,14 @@ func TestDialService_CreateDial(t *testing.T) {
 		defer MustCloseDB(t, db)
 		_, ctx0 := MustCreateUser(t, context.Background(), db, &wtf.User{Name: "jane", Email: "jane@gmail.com"})
 
-		if err := sqlite.NewDialService(db).CreateDial(ctx0, &wtf.Dial{}); err == nil {
+		ser := eventsourcing.NewSerializer(json.Marshal, json.Unmarshal)
+		es := essql.Open(db.DB(), *ser)
+		err := es.Migrate()
+		if err != nil {
+			t.Fatal(err)
+		}
+		repo := eventsourcing.NewRepository(es, nil)
+		if err := sqlite.NewDialService(db, repo).CreateDial(ctx0, &wtf.Dial{}); err == nil {
 			t.Fatal("expected error")
 		} else if wtf.ErrorCode(err) != wtf.EINVALID || wtf.ErrorMessage(err) != "Dial name required." {
 			t.Fatal(err)
@@ -74,7 +92,14 @@ func TestDialService_CreateDial(t *testing.T) {
 		defer MustCloseDB(t, db)
 		_, ctx0 := MustCreateUser(t, context.Background(), db, &wtf.User{Name: "jane", Email: "jane@gmail.com"})
 
-		if err := sqlite.NewDialService(db).CreateDial(ctx0, &wtf.Dial{Name: strings.Repeat("X", wtf.MaxDialNameLen+1)}); err == nil {
+		ser := eventsourcing.NewSerializer(json.Marshal, json.Unmarshal)
+		es := essql.Open(db.DB(), *ser)
+		err := es.Migrate()
+		if err != nil {
+			t.Fatal(err)
+		}
+		repo := eventsourcing.NewRepository(es, nil)
+		if err := sqlite.NewDialService(db, repo).CreateDial(ctx0, &wtf.Dial{Name: strings.Repeat("X", wtf.MaxDialNameLen+1)}); err == nil {
 			t.Fatal("expected error")
 		} else if wtf.ErrorCode(err) != wtf.EINVALID || wtf.ErrorMessage(err) != "Dial name too long." {
 			t.Fatal(err)
@@ -85,7 +110,14 @@ func TestDialService_CreateDial(t *testing.T) {
 	t.Run("ErrUserRequired", func(t *testing.T) {
 		db := MustOpenDB(t)
 		defer MustCloseDB(t, db)
-		if err := sqlite.NewDialService(db).CreateDial(context.Background(), &wtf.Dial{}); err == nil {
+		ser := eventsourcing.NewSerializer(json.Marshal, json.Unmarshal)
+		es := essql.Open(db.DB(), *ser)
+		err := es.Migrate()
+		if err != nil {
+			t.Fatal(err)
+		}
+		repo := eventsourcing.NewRepository(es, nil)
+		if err := sqlite.NewDialService(db, repo).CreateDial(context.Background(), &wtf.Dial{}); err == nil {
 			t.Fatal("expected error")
 		} else if wtf.ErrorCode(err) != wtf.EUNAUTHORIZED || wtf.ErrorMessage(err) != "You must be logged in to create a dial." {
 			t.Fatal(err)
@@ -98,7 +130,11 @@ func TestDialService_UpdateDial(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		db := MustOpenDB(t)
 		defer MustCloseDB(t, db)
-		s := sqlite.NewDialService(db)
+		ser := eventsourcing.NewSerializer(json.Marshal, json.Unmarshal)
+		es := essql.Open(db.DB(), *ser)
+		err := es.Migrate()
+		repo := eventsourcing.NewRepository(es, nil)
+		s := sqlite.NewDialService(db, repo)
 
 		ctx := context.Background()
 		_, ctx0 := MustCreateUser(t, ctx, db, &wtf.User{Name: "jane", Email: "jane@gmail.com"})
@@ -136,7 +172,14 @@ func TestDialService_FindDials(t *testing.T) {
 		MustCreateDial(t, ctx0, db, &wtf.Dial{Name: "dial1"})
 		MustCreateDial(t, ctx1, db, &wtf.Dial{Name: "dial2"})
 
-		s := sqlite.NewDialService(db)
+		ser := eventsourcing.NewSerializer(json.Marshal, json.Unmarshal)
+		es := essql.Open(db.DB(), *ser)
+		err := es.Migrate()
+		if err != nil {
+			t.Fatal(err)
+		}
+		repo := eventsourcing.NewRepository(es, nil)
+		s := sqlite.NewDialService(db, repo)
 		if a, n, err := s.FindDials(ctx0, wtf.DialFilter{}); err != nil {
 			t.Fatal(err)
 		} else if got, want := len(a), 2; got != want {
@@ -163,7 +206,14 @@ func TestDialService_FindDials(t *testing.T) {
 		MustCreateDial(t, ctx0, db, &wtf.Dial{Name: "dial1"})
 		MustCreateDialMembership(t, ctx1, db, &wtf.DialMembership{DialID: dial0.ID, UserID: user1.ID})
 
-		s := sqlite.NewDialService(db)
+		ser := eventsourcing.NewSerializer(json.Marshal, json.Unmarshal)
+		es := essql.Open(db.DB(), *ser)
+		err := es.Migrate()
+		if err != nil {
+			t.Fatal(err)
+		}
+		repo := eventsourcing.NewRepository(es, nil)
+		s := sqlite.NewDialService(db, repo)
 		if a, n, err := s.FindDials(ctx1, wtf.DialFilter{}); err != nil {
 			t.Fatal(err)
 		} else if got, want := len(a), 1; got != want {
@@ -186,7 +236,14 @@ func TestDialService_FindDials(t *testing.T) {
 		dial0 := MustCreateDial(t, ctx0, db, &wtf.Dial{Name: "dial0"})
 		MustCreateDial(t, ctx0, db, &wtf.Dial{Name: "dial1"})
 
-		s := sqlite.NewDialService(db)
+		ser := eventsourcing.NewSerializer(json.Marshal, json.Unmarshal)
+		es := essql.Open(db.DB(), *ser)
+		err := es.Migrate()
+		if err != nil {
+			t.Fatal(err)
+		}
+		repo := eventsourcing.NewRepository(es, nil)
+		s := sqlite.NewDialService(db, repo)
 		if a, n, err := s.FindDials(context.Background(), wtf.DialFilter{InviteCode: &dial0.InviteCode}); err != nil {
 			t.Fatal(err)
 		} else if got, want := len(a), 1; got != want {
@@ -204,7 +261,14 @@ func TestDialService_DeleteDial(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		db := MustOpenDB(t)
 		defer MustCloseDB(t, db)
-		s := sqlite.NewDialService(db)
+		ser := eventsourcing.NewSerializer(json.Marshal, json.Unmarshal)
+		es := essql.Open(db.DB(), *ser)
+		err := es.Migrate()
+		if err != nil {
+			t.Fatal(err)
+		}
+		repo := eventsourcing.NewRepository(es, nil)
+		s := sqlite.NewDialService(db, repo)
 
 		_, ctx0 := MustCreateUser(t, context.Background(), db, &wtf.User{Name: "jane", Email: "jane@gmail.com"})
 		dial := MustCreateDial(t, ctx0, db, &wtf.Dial{Name: "NAME"})
@@ -222,7 +286,11 @@ func TestDialService_AverageDialValueReport(t *testing.T) {
 	t.Run("SingleDial", func(t *testing.T) {
 		db := MustOpenDB(t)
 		defer MustCloseDB(t, db)
-		s := sqlite.NewDialService(db)
+		ser := eventsourcing.NewSerializer(json.Marshal, json.Unmarshal)
+		es := essql.Open(db.DB(), *ser)
+		err := es.Migrate()
+		repo := eventsourcing.NewRepository(es, nil)
+		s := sqlite.NewDialService(db, repo)
 
 		db.Now = func() time.Time {
 			return time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC)
@@ -232,7 +300,7 @@ func TestDialService_AverageDialValueReport(t *testing.T) {
 		_, ctx0 := MustCreateUser(t, ctx, db, &wtf.User{Name: "jane"})
 		_, ctx1 := MustCreateUser(t, ctx, db, &wtf.User{Name: "joe"})
 
-		dial0 := MustCreateDial(t, ctx0, db, &wtf.Dial{Name: "DIAL0"})
+		dial0 := MustCreateDial(t, ctx0, db, repo, &wtf.Dial{Name: "DIAL0"})
 		membership0 := MustFindDialMembershipByID(t, ctx0, db, 1)
 		MustCreateDialMembership(t, ctx1, db, &wtf.DialMembership{DialID: dial0.ID})
 
@@ -269,7 +337,11 @@ func TestDialService_AverageDialValueReport(t *testing.T) {
 // MustFindDialByID finds a dial by ID. Fatal on error.
 func MustFindDialByID(tb testing.TB, ctx context.Context, db *sqlite.DB, id int) *wtf.Dial {
 	tb.Helper()
-	dial, err := sqlite.NewDialService(db).FindDialByID(ctx, id)
+	ser := eventsourcing.NewSerializer(json.Marshal, json.Unmarshal)
+	es := essql.Open(db.DB(), *ser)
+	err := es.Migrate()
+	repo := eventsourcing.NewRepository(es, nil)
+	dial, err := sqlite.NewDialService(db, repo).FindDialByID(ctx, id)
 	if err != nil {
 		tb.Fatal(err)
 	}
@@ -277,9 +349,9 @@ func MustFindDialByID(tb testing.TB, ctx context.Context, db *sqlite.DB, id int)
 }
 
 // MustCreateDial creates a dial in the database. Fatal on error.
-func MustCreateDial(tb testing.TB, ctx context.Context, db *sqlite.DB, dial *wtf.Dial) *wtf.Dial {
+func MustCreateDial(tb testing.TB, ctx context.Context, db *sqlite.DB, repo *eventsourcing.Repository, dial *wtf.Dial) *wtf.Dial {
 	tb.Helper()
-	if err := sqlite.NewDialService(db).CreateDial(ctx, dial); err != nil {
+	if err := sqlite.NewDialService(db, repo).CreateDial(ctx, dial); err != nil {
 		tb.Fatal(err)
 	}
 	return dial
