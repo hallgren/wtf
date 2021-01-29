@@ -34,3 +34,32 @@ func TestCreateDial(t *testing.T) {
 		t.Fatal("expected invite code to be set")
 	}
 }
+
+func TestAddMembership(t *testing.T) {
+	dial, err := wtf.NewDial(1, 43, "123")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = dial.AddMembership(2, 33)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(dial.Memberships) != 2 {
+		t.Fatalf("expected 2 membershipa got %d", len(dial.Memberships))
+	}
+	if dial.Value != (33+43)/2 {
+		t.Fatalf("expected 38 in Value got %v", dial.Value)
+	}
+}
+
+func TestAddExistingMembership(t *testing.T) {
+	dial, err := wtf.NewDial(1, 43, "123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = dial.AddMembership(1, 33)
+	if err == nil {
+		t.Fatal("expected error user membership already exist, got none")
+	}
+}

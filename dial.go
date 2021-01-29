@@ -89,7 +89,7 @@ func (d *Dial) Transition(event eventsourcing.Event) {
 		d.UpdatedAt = event.Timestamp
 
 	case *SelfMembershipCreated:
-		membership := DialMembership{ID: e.ID, Value: e.Value}
+		membership := DialMembership{ID: e.ID, Value: e.Value, UserID: d.UserID}
 		d.Memberships = append(d.Memberships, &membership)
 		d.UpdatedAt = event.Timestamp
 
@@ -124,6 +124,17 @@ func NewDial(userID, value int, name string) (*Dial, error) {
 	dial.TrackChange(&dial, &Created{ID: 1, OwnerID: userID, Name: name, InviteCode: "123"})
 	dial.TrackChange(&dial, &SelfMembershipCreated{ID: 1, Value: value})
 	return &dial, nil
+}
+
+func (d *Dial) AddMembership(userID int, value int) error {
+	for _, membership := range d.Memberships {
+		fmt.Println(membership.UserID, userID)
+		if membership.UserID == userID {
+			return fmt.Errorf("user membership already exist")
+		}
+	}
+	d.TrackChange(d, &MembershipCreated{UserID: userID, Value: value})
+	return nil
 }
 
 // MembershipByUserID returns the membership attached to the dial for a given user.
