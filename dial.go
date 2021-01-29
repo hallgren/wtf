@@ -89,7 +89,11 @@ func (d *Dial) Transition(event eventsourcing.Event) {
 		d.UpdatedAt = event.Timestamp
 
 	case *SelfMembershipCreated:
-		membership := DialMembership{ID: e.ID, Value: e.Value, UserID: d.UserID}
+		membership := DialMembership{
+			ID:     e.ID,
+			Value:  e.Value,
+			UserID: d.UserID,
+		}
 		d.Memberships = append(d.Memberships, &membership)
 		d.UpdatedAt = event.Timestamp
 
