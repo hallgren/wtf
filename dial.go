@@ -185,7 +185,7 @@ type DialService interface {
 
 	// Creates a new dial and assigns the current user as the owner.
 	// The owner will automatically be added as a member of the new dial.
-	CreateDial(ctx context.Context, dial *DialCreate) error
+	CreateDial(ctx context.Context, dial *DialCreate) (*Dial, error)
 
 	// Updates an existing dial by ID. Only the dial owner can update a dial.
 	// Returns the new dial state even if there was an error during update.

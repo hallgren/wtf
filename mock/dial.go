@@ -13,7 +13,7 @@ var _ wtf.DialService = (*DialService)(nil)
 type DialService struct {
 	FindDialByIDFn           func(ctx context.Context, id int) (*wtf.Dial, error)
 	FindDialsFn              func(ctx context.Context, filter wtf.DialFilter) ([]*wtf.Dial, int, error)
-	CreateDialFn             func(ctx context.Context, dial *wtf.Dial) error
+	CreateDialFn             func(ctx context.Context, dial *wtf.DialCreate) (*wtf.Dial, error)
 	UpdateDialFn             func(ctx context.Context, id int, upd wtf.DialUpdate) (*wtf.Dial, error)
 	DeleteDialFn             func(ctx context.Context, id int) error
 	SetDialMembershipValueFn func(ctx context.Context, dialID, value int) error
@@ -28,7 +28,7 @@ func (s *DialService) FindDials(ctx context.Context, filter wtf.DialFilter) ([]*
 	return s.FindDialsFn(ctx, filter)
 }
 
-func (s *DialService) CreateDial(ctx context.Context, dial *wtf.Dial) error {
+func (s *DialService) CreateDial(ctx context.Context, dial *wtf.DialCreate) (*wtf.Dial, error) {
 	return s.CreateDialFn(ctx, dial)
 }
 
