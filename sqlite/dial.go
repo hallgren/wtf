@@ -21,35 +21,29 @@ type DialService struct {
 }
 
 // NewDialService returns a new instance of DialService.
-func NewDialService(db *DB, repo *eventsourcing.Repository) *DialService {
-	return &DialService{
-		db:   db,
-		repo: repo,
-	}
+func NewDialService(db *DB) *DialService {
+	return &DialService{db: db}
 }
 
 // FindDialByID retrieves a single dial by ID along with associated memberships.
 // Only the dial owner & members can see a dial. Returns ENOTFOUND if dial does
 // not exist or user does not have permission to view it.
 func (s *DialService) FindDialByID(ctx context.Context, id int) (*wtf.Dial, error) {
-	//tx, err := s.db.BeginTx(ctx, nil)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//defer tx.Rollback()
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
 
-	//// Fetch dial object and attach owner user.
-	//dial, err := findDialByID(ctx, tx, id)
-	//if err != nil {
-	//	return nil, err
-	//} else if err := attachDialAssociations(ctx, tx, dial); err != nil {
-	//	return nil, err
-	//}
+	// Fetch dial object and attach owner user.
+	dial, err := findDialByID(ctx, tx, id)
+	if err != nil {
+		return nil, err
+	} else if err := attachDialAssociations(ctx, tx, dial); err != nil {
+		return nil, err
+	}
 
-	dial := wtf.Dial{}
-	s.repo.Get(fmt.Sprintf("%v", id), &dial)
-
-	return &dial, nil
+	return dial, nil
 }
 
 // FindDials retrieves a list of dials based on a filter. Only returns dials
@@ -83,28 +77,27 @@ func (s *DialService) FindDials(ctx context.Context, filter wtf.DialFilter) ([]*
 // CreateDial creates a new dial and assigns the current user as the owner.
 // The owner will automatically be added as a member of the new dial.
 func (s *DialService) CreateDial(ctx context.Context, dial *wtf.Dial) error {
-	return s.repo.Save(dial)
-	//	tx, err := s.db.BeginTx(ctx, nil)
-	//	if err != nil {
-	//		return err
-	//	}
-	//	defer tx.Rollback()
-	//
-	//	// Assign dial to the current user.
-	//	// Return an error if the user is not currently logged in.
-	//	userID := wtf.UserIDFromContext(ctx)
-	//	if userID == 0 {
-	//		return wtf.Errorf(wtf.EUNAUTHORIZED, "You must be logged in to create a dial.")
-	//	}
-	//	dial.UserID = wtf.UserIDFromContext(ctx)
-	//
-	//	// Create dial and attach associated owner user.
-	//	if err := createDial(ctx, tx, dial); err != nil {
-	//		return err
-	//	} else if err := attachDialAssociations(ctx, tx, dial); err != nil {
-	//		return err
-	//	}
-	//	return tx.Commit()
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Assign dial to the current user.
+	// Return an error if the user is not currently logged in.
+	userID := wtf.UserIDFromContext(ctx)
+	if userID == 0 {
+		return wtf.Errorf(wtf.EUNAUTHORIZED, "You must be logged in to create a dial.")
+	}
+	dial.UserID = wtf.UserIDFromContext(ctx)
+
+	// Create dial and attach associated owner user.
+	if err := createDial(ctx, tx, dial); err != nil {
+		return err
+	} else if err := attachDialAssociations(ctx, tx, dial); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 // UpdateDial updates an existing dial by ID. Only the dial owner can update a dial.

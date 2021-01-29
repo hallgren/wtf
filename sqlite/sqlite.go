@@ -57,10 +57,6 @@ type DB struct {
 	Now func() time.Time
 }
 
-func (db *DB) DB() *sql.DB {
-	return db.db
-}
-
 // NewDB returns a new instance of DB associated with the given datasource name.
 func NewDB(dsn string) *DB {
 	db := &DB{

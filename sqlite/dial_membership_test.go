@@ -2,15 +2,12 @@ package sqlite_test
 
 import (
 	"context"
-	"encoding/json"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/benbjohnson/wtf"
 	"github.com/benbjohnson/wtf/sqlite"
-	"github.com/hallgren/eventsourcing"
-	essql "github.com/hallgren/eventsourcing/eventstore/sql"
 )
 
 func TestDialMembershipService_CreateDialMembership(t *testing.T) {
@@ -19,16 +16,10 @@ func TestDialMembershipService_CreateDialMembership(t *testing.T) {
 		db := MustOpenDB(t)
 		defer MustCloseDB(t, db)
 
-		ser := eventsourcing.NewSerializer(json.Marshal, json.Unmarshal)
-		es := essql.Open(db.DB(), *ser)
-		err := es.Migrate()
-		repo := eventsourcing.NewRepository(es, nil)
-
-		s := sqlite.NewDialService(db, repo)
 		ctx := context.Background()
 		_, ctx0 := MustCreateUser(t, ctx, db, &wtf.User{Name: "jane", Email: "jane@gmail.com"})
 		_, ctx1 := MustCreateUser(t, ctx, db, &wtf.User{Name: "jim", Email: "jim@gmail.com"})
-		dial := MustCreateDial(t, ctx0, db, repo, &wtf.Dial{Name: "DIAL"})
+		dial := MustCreateDial(t, ctx0, db, &wtf.Dial{Name: "DIAL"})
 
 		s := sqlite.NewDialMembershipService(db)
 		membership := &wtf.DialMembership{
@@ -130,14 +121,7 @@ func TestDialMembershipService_UpdateDialMembership(t *testing.T) {
 	t.Run("DialValueRollup", func(t *testing.T) {
 		db := MustOpenDB(t)
 		defer MustCloseDB(t, db)
-		ser := eventsourcing.NewSerializer(json.Marshal, json.Unmarshal)
-		es := essql.Open(db.DB(), *ser)
-		err := es.Migrate()
-		if err != nil {
-			t.Fatal(err)
-		}
-		repo := eventsourcing.NewRepository(es, nil)
-		s := sqlite.NewDialService(db, repo)
+		s := sqlite.NewDialService(db)
 
 		db.Now = func() time.Time {
 			return time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC)
