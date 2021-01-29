@@ -31,22 +31,22 @@ type DialMembership struct {
 }
 
 // CanEditDialMembership returns true if the current user can edit membership.
-//func CanEditDialMembership(ctx context.Context, membership *DialMembership) bool {
-//	return membership.UserID == UserIDFromContext(ctx)
-//}
+func CanEditDialMembership(ctx context.Context, membership *DialMembership) bool {
+	return membership.UserID == UserIDFromContext(ctx)
+}
 
 // CanDeleteDialMembership returns true if the current user can delete membership.
-//func CanDeleteDialMembership(ctx context.Context, membership *DialMembership) bool {
-//	userID := UserIDFromContext(ctx)
-//	if membership.Dial != nil {
-//		if membership.Dial.UserID == membership.UserID {
-//			return false // dial owner cannot delete membership
-//		} else if membership.Dial.UserID == userID {
-//			return true // dial owner can delete other memberships
-//		}
-//	}
-//	return membership.UserID == userID // non-dial owner can delete own membership
-//}
+func CanDeleteDialMembership(ctx context.Context, membership *DialMembership) bool {
+	userID := UserIDFromContext(ctx)
+	if membership.Dial != nil {
+		if membership.Dial.UserID == membership.UserID {
+			return false // dial owner cannot delete membership
+		} else if membership.Dial.UserID == userID {
+			return true // dial owner can delete other memberships
+		}
+	}
+	return membership.UserID == userID // non-dial owner can delete own membership
+}
 
 // Validate returns an error if membership fields are invalid.
 // Only performs basic validation.

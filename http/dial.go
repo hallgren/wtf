@@ -157,19 +157,19 @@ func (s *Server) handleDialNew(w http.ResponseWriter, r *http.Request) {
 // It reads & writes data using with HTML or JSON.
 func (s *Server) handleDialCreate(w http.ResponseWriter, r *http.Request) {
 	// Unmarshal data based on HTTP request's content type.
-	var dial wtf.Dial
+	var dialCreate wtf.DialCreate
 	switch r.Header.Get("Content-type") {
 	case "application/json":
-		if err := json.NewDecoder(r.Body).Decode(&dial); err != nil {
+		if err := json.NewDecoder(r.Body).Decode(&dialCreate); err != nil {
 			Error(w, r, wtf.Errorf(wtf.EINVALID, "Invalid JSON body"))
 			return
 		}
 	default:
-		dial.Name = r.PostFormValue("name")
+		dialCreate.Name = r.PostFormValue("name")
 	}
 
 	// Create dial in the database.
-	err := s.DialService.CreateDial(r.Context(), &dial)
+	dial, err := s.DialService.CreateDial(r.Context(), &dialCreate)
 
 	// Write new dial content to response based on accept header.
 	switch r.Header.Get("Accept") {
@@ -194,7 +194,7 @@ func (s *Server) handleDialCreate(w http.ResponseWriter, r *http.Request) {
 			Error(w, r, err)
 			return
 		} else if err != nil {
-			tmpl := html.DialEditTemplate{Dial: &dial, Err: err}
+			tmpl := html.DialEditTemplate{Dial: dial, Err: err}
 			tmpl.Render(r.Context(), w)
 			return
 		}
