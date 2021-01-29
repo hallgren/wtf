@@ -13,6 +13,10 @@ type AuthService struct {
 	as *sqlite.AuthService
 }
 
+func NewAuthService(as *sqlite.AuthService) *AuthService {
+	return &AuthService{as: as}
+}
+
 func (s *AuthService) FindAuthByID(ctx context.Context, id int) (*wtf.Auth, error) {
 	return s.as.FindAuthByID(ctx, id)
 }
