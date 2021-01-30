@@ -1,4 +1,4 @@
-package eventsourcing_test
+package es_test
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/benbjohnson/wtf"
-	"github.com/benbjohnson/wtf/eventsourcing"
+	"github.com/benbjohnson/wtf/es"
 	"github.com/benbjohnson/wtf/sqlite"
 )
 
@@ -19,7 +19,7 @@ func TestUserService_CreateUser(t *testing.T) {
 		db := MustOpenDB(t)
 		defer MustCloseDB(t, db)
 		us := sqlite.NewUserService(db)
-		s := eventsourcing.NewUserService(us)
+		s := es.NewUserService(us)
 
 		u := &wtf.User{
 			Name:  "susy",
@@ -58,7 +58,7 @@ func TestUserService_CreateUser(t *testing.T) {
 		db := MustOpenDB(t)
 		defer MustCloseDB(t, db)
 		us := sqlite.NewUserService(db)
-		s := eventsourcing.NewUserService(us)
+		s := es.NewUserService(us)
 		if err := s.CreateUser(context.Background(), &wtf.User{}); err == nil {
 			t.Fatal("expected error")
 		} else if wtf.ErrorCode(err) != wtf.EINVALID || wtf.ErrorMessage(err) != `User name required.` {
@@ -73,7 +73,7 @@ func TestUserService_UpdateUser(t *testing.T) {
 		db := MustOpenDB(t)
 		defer MustCloseDB(t, db)
 		us := sqlite.NewUserService(db)
-		s := eventsourcing.NewUserService(us)
+		s := es.NewUserService(us)
 		user0, ctx0 := MustCreateUser(t, context.Background(), db, &wtf.User{
 			Name:  "susy",
 			Email: "susy@gmail.com",
@@ -106,7 +106,7 @@ func TestUserService_UpdateUser(t *testing.T) {
 		db := MustOpenDB(t)
 		defer MustCloseDB(t, db)
 		us := sqlite.NewUserService(db)
-		s := eventsourcing.NewUserService(us)
+		s := es.NewUserService(us)
 		user0, _ := MustCreateUser(t, context.Background(), db, &wtf.User{Name: "NAME0"})
 		_, ctx1 := MustCreateUser(t, context.Background(), db, &wtf.User{Name: "NAME1"})
 

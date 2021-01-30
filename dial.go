@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/hallgren/eventsourcing"
@@ -57,7 +58,6 @@ type Dial struct {
 
 // Created event happends when the dial is first created
 type Created struct {
-	ID         int
 	OwnerID    int
 	Name       string
 	InviteCode string
@@ -80,7 +80,8 @@ type MembershipCreated struct {
 func (d *Dial) Transition(event eventsourcing.Event) {
 	switch e := event.Data.(type) {
 	case *Created:
-		d.ID = e.ID
+		i, _ := strconv.Atoi(event.AggregateRootID)
+		d.ID = i
 		d.Name = e.Name
 		d.CreatedAt = event.Timestamp
 		d.UserID = e.OwnerID
@@ -120,12 +121,13 @@ func (d *Dial) Transition(event eventsourcing.Event) {
 	}
 }
 
-func NewDial(userID, value int, name string) (*Dial, error) {
+func NewDial(id, userID, value int, name string) (*Dial, error) {
 	if name == "" {
 		return nil, errors.New("name can't be empty")
 	}
 	dial := Dial{}
-	dial.TrackChange(&dial, &Created{ID: 1, OwnerID: userID, Name: name, InviteCode: "123"})
+	dial.SetID(strconv.Itoa(id))
+	dial.TrackChange(&dial, &Created{OwnerID: userID, Name: name, InviteCode: "123"})
 	dial.TrackChange(&dial, &SelfMembershipCreated{ID: 1, Value: value})
 	return &dial, nil
 }
@@ -231,6 +233,7 @@ type DialUpdate struct {
 
 // DialCreate represents a set of fields to create a dial.
 type DialCreate struct {
+	ID    int
 	Name  string
 	Value int
 }

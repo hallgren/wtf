@@ -7,7 +7,7 @@ import (
 )
 
 func TestCreateDial(t *testing.T) {
-	dial, err := wtf.NewDial(1, 43, "123")
+	dial, err := wtf.NewDial(1, 1, 43, "123")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,7 +36,7 @@ func TestCreateDial(t *testing.T) {
 }
 
 func TestAddMembership(t *testing.T) {
-	dial, err := wtf.NewDial(1, 43, "123")
+	dial, err := wtf.NewDial(1, 1, 43, "123")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +54,7 @@ func TestAddMembership(t *testing.T) {
 }
 
 func TestAddExistingMembership(t *testing.T) {
-	dial, err := wtf.NewDial(1, 43, "123")
+	dial, err := wtf.NewDial(1, 1, 43, "123")
 	if err != nil {
 		t.Fatal(err)
 	}

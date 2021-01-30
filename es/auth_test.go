@@ -1,4 +1,4 @@
-package eventsourcing_test
+package es_test
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/benbjohnson/wtf"
-	"github.com/benbjohnson/wtf/eventsourcing"
+	"github.com/benbjohnson/wtf/es"
 	"github.com/benbjohnson/wtf/sqlite"
 )
 
@@ -17,7 +17,7 @@ func TestAuthService_CreateAuth(t *testing.T) {
 		db := MustOpenDB(t)
 		defer MustCloseDB(t, db)
 		as := sqlite.NewAuthService(db)
-		s := eventsourcing.NewAuthService(as)
+		s := es.NewAuthService(as)
 
 		expiry := time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC)
 		auth := &wtf.Auth{
@@ -65,7 +65,7 @@ func TestAuthService_CreateAuth(t *testing.T) {
 		db := MustOpenDB(t)
 		defer MustCloseDB(t, db)
 		as := sqlite.NewAuthService(db)
-		s := eventsourcing.NewAuthService(as)
+		s := es.NewAuthService(as)
 		if err := s.CreateAuth(context.Background(), &wtf.Auth{
 			User: &wtf.User{Name: "NAME"},
 		}); err == nil {
@@ -80,7 +80,7 @@ func TestAuthService_CreateAuth(t *testing.T) {
 		db := MustOpenDB(t)
 		defer MustCloseDB(t, db)
 		as := sqlite.NewAuthService(db)
-		s := eventsourcing.NewAuthService(as)
+		s := es.NewAuthService(as)
 		if err := s.CreateAuth(context.Background(), &wtf.Auth{
 			Source: wtf.AuthSourceGitHub,
 			User:   &wtf.User{Name: "NAME"},
@@ -96,7 +96,7 @@ func TestAuthService_CreateAuth(t *testing.T) {
 		db := MustOpenDB(t)
 		defer MustCloseDB(t, db)
 		as := sqlite.NewAuthService(db)
-		s := eventsourcing.NewAuthService(as)
+		s := es.NewAuthService(as)
 		if err := s.CreateAuth(context.Background(), &wtf.Auth{
 			Source:   wtf.AuthSourceGitHub,
 			SourceID: "X",
@@ -113,7 +113,7 @@ func TestAuthService_CreateAuth(t *testing.T) {
 		db := MustOpenDB(t)
 		defer MustCloseDB(t, db)
 		as := sqlite.NewAuthService(db)
-		s := eventsourcing.NewAuthService(as)
+		s := es.NewAuthService(as)
 		if err := s.CreateAuth(context.Background(), &wtf.Auth{}); err == nil {
 			t.Fatal("expected error")
 		} else if wtf.ErrorCode(err) != wtf.EINVALID || wtf.ErrorMessage(err) != `User required.` {
@@ -128,7 +128,7 @@ func TestAuthService_DeleteAuth(t *testing.T) {
 		db := MustOpenDB(t)
 		defer MustCloseDB(t, db)
 		as := sqlite.NewAuthService(db)
-		s := eventsourcing.NewAuthService(as)
+		s := es.NewAuthService(as)
 		auth0, ctx0 := MustCreateAuth(t, context.Background(), db, &wtf.Auth{
 			Source:      wtf.AuthSourceGitHub,
 			SourceID:    "X",
@@ -148,7 +148,7 @@ func TestAuthService_DeleteAuth(t *testing.T) {
 		db := MustOpenDB(t)
 		defer MustCloseDB(t, db)
 		as := sqlite.NewAuthService(db)
-		s := eventsourcing.NewAuthService(as)
+		s := es.NewAuthService(as)
 		if err := s.DeleteAuth(context.Background(), 1); wtf.ErrorCode(err) != wtf.ENOTFOUND {
 			t.Fatalf("unexpected error: %#v", err)
 		}
@@ -159,7 +159,7 @@ func TestAuthService_DeleteAuth(t *testing.T) {
 		db := MustOpenDB(t)
 		defer MustCloseDB(t, db)
 		as := sqlite.NewAuthService(db)
-		s := eventsourcing.NewAuthService(as)
+		s := es.NewAuthService(as)
 
 		// We use test helpers to avoid redundant error checks that are not specific to our test.
 		auth0, _ := MustCreateAuth(t, context.Background(), db, &wtf.Auth{
@@ -187,7 +187,7 @@ func TestAuthService_FindAuth(t *testing.T) {
 		db := MustOpenDB(t)
 		defer MustCloseDB(t, db)
 		as := sqlite.NewAuthService(db)
-		s := eventsourcing.NewAuthService(as)
+		s := es.NewAuthService(as)
 		if _, err := s.FindAuthByID(context.Background(), 1); wtf.ErrorCode(err) != wtf.ENOTFOUND {
 			t.Fatalf("unexpected error: %#v", err)
 		}
@@ -200,7 +200,7 @@ func TestAuthService_FindAuths(t *testing.T) {
 		db := MustOpenDB(t)
 		defer MustCloseDB(t, db)
 		as := sqlite.NewAuthService(db)
-		s := eventsourcing.NewAuthService(as)
+		s := es.NewAuthService(as)
 
 		ctx := context.Background()
 
@@ -245,7 +245,7 @@ func TestAuthService_FindAuths(t *testing.T) {
 func MustCreateAuth(tb testing.TB, ctx context.Context, db *sqlite.DB, auth *wtf.Auth) (*wtf.Auth, context.Context) {
 	tb.Helper()
 	as := sqlite.NewAuthService(db)
-	s := eventsourcing.NewAuthService(as)
+	s := es.NewAuthService(as)
 	if err := s.CreateAuth(ctx, auth); err != nil {
 		tb.Fatal(err)
 	}

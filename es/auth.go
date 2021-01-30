@@ -1,4 +1,4 @@
-package eventsourcing
+package es
 
 import (
 	"context"
