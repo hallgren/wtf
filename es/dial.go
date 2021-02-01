@@ -2,6 +2,7 @@ package es
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/benbjohnson/wtf"
@@ -21,6 +22,14 @@ type DialService struct {
 
 func NewDialService(repo *eventsourcing.Repository, s *sqlite.DialService) *DialService {
 	return &DialService{repo: repo, s: s}
+}
+
+func (s *DialService) Subscribe() {
+	subscription := s.repo.SubscriberAll(func(e eventsourcing.Event) {
+		fmt.Println(e)
+	})
+	subscription.Subscribe()
+
 }
 
 func (s *DialService) CreateDial(ctx context.Context, dial *wtf.Dial) error {
