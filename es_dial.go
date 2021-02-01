@@ -114,7 +114,15 @@ func NewDial(userID, value int, name string) (*ESDial, error) {
 		return nil, errors.New("name can't be empty")
 	}
 	dial := ESDial{}
-	dial.TrackChange(&dial, &Created{OwnerID: userID, Name: name, InviteCode: "123"})
+
+	// Generate a random invite code.
+	inviteCode := make([]byte, 16)
+	if _, err := io.ReadFull(rand.Reader, inviteCode); err != nil {
+		return err
+	}
+
+	inviteCode = hex.EncodeToString(inviteCode)
+	dial.TrackChange(&dial, &Created{OwnerID: userID, Name: name, InviteCode: inviteCode})
 	dial.TrackChange(&dial, &SelfMembershipCreated{ID: 1, Value: value})
 	return &dial, nil
 }
