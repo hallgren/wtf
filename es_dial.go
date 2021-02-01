@@ -1,8 +1,11 @@
 package wtf
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/hallgren/eventsourcing"
@@ -118,11 +121,11 @@ func NewDial(userID, value int, name string) (*ESDial, error) {
 	// Generate a random invite code.
 	inviteCode := make([]byte, 16)
 	if _, err := io.ReadFull(rand.Reader, inviteCode); err != nil {
-		return err
+		return nil, err
 	}
 
-	inviteCode = hex.EncodeToString(inviteCode)
-	dial.TrackChange(&dial, &Created{OwnerID: userID, Name: name, InviteCode: inviteCode})
+	ic := hex.EncodeToString(inviteCode)
+	dial.TrackChange(&dial, &Created{OwnerID: userID, Name: name, InviteCode: ic})
 	dial.TrackChange(&dial, &SelfMembershipCreated{ID: 1, Value: value})
 	return &dial, nil
 }
