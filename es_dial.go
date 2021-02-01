@@ -3,7 +3,6 @@ package wtf
 import (
 	"errors"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/hallgren/eventsourcing"
@@ -23,8 +22,6 @@ import (
 type ESDial struct {
 	// include the eventsourcing.AggregateRoot to enable to handle events to state translate the dial entity
 	eventsourcing.AggregateRoot
-
-	ID int `json:"id"`
 
 	// Owner of the dial. Only the owner may delete the dial.
 	UserID int `json:"userID"`
@@ -73,8 +70,6 @@ type MembershipCreated struct {
 func (d *ESDial) Transition(event eventsourcing.Event) {
 	switch e := event.Data.(type) {
 	case *Created:
-		i, _ := strconv.Atoi(event.AggregateRootID)
-		d.ID = i
 		d.Name = e.Name
 		d.CreatedAt = event.Timestamp
 		d.UserID = e.OwnerID
