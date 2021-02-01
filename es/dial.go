@@ -5,23 +5,22 @@ import (
 	"time"
 
 	"github.com/benbjohnson/wtf"
+	"github.com/benbjohnson/wtf/sqlite"
 	"github.com/hallgren/eventsourcing"
 )
 
 var _ wtf.DialService = (*DialService)(nil)
 
 type DialService struct {
-	FindDialByIDFn           func(ctx context.Context, id int) (*wtf.Dial, error)
-	FindDialsFn              func(ctx context.Context, filter wtf.DialFilter) ([]*wtf.Dial, int, error)
 	UpdateDialFn             func(ctx context.Context, id int, upd wtf.DialUpdate) (*wtf.Dial, error)
 	DeleteDialFn             func(ctx context.Context, id int) error
 	SetDialMembershipValueFn func(ctx context.Context, dialID, value int) error
-	AverageDialValueReportFn func(ctx context.Context, start, end time.Time, interval time.Duration) (*wtf.DialValueReport, error)
+	s                        *sqlite.DialService
 	repo                     *eventsourcing.Repository
 }
 
-func NewDialService(repo *eventsourcing.Repository) *DialService {
-	return &DialService{repo: repo}
+func NewDialService(repo *eventsourcing.Repository, s *sqlite.DialService) *DialService {
+	return &DialService{repo: repo, s: s}
 }
 
 func (s *DialService) CreateDial(ctx context.Context, dial *wtf.Dial) error {
@@ -34,11 +33,11 @@ func (s *DialService) CreateDial(ctx context.Context, dial *wtf.Dial) error {
 }
 
 func (s *DialService) FindDialByID(ctx context.Context, id int) (*wtf.Dial, error) {
-	return s.FindDialByIDFn(ctx, id)
+	return s.s.FindDialByID(ctx, id)
 }
 
 func (s *DialService) FindDials(ctx context.Context, filter wtf.DialFilter) ([]*wtf.Dial, int, error) {
-	return s.FindDialsFn(ctx, filter)
+	return s.s.FindDials(ctx, filter)
 }
 
 func (s *DialService) UpdateDial(ctx context.Context, id int, upd wtf.DialUpdate) (*wtf.Dial, error) {
@@ -54,5 +53,5 @@ func (s *DialService) SetDialMembershipValue(ctx context.Context, dialID, value 
 }
 
 func (s *DialService) AverageDialValueReport(ctx context.Context, start, end time.Time, interval time.Duration) (*wtf.DialValueReport, error) {
-	return s.AverageDialValueReportFn(ctx, start, end, interval)
+	return s.s.AverageDialValueReport(ctx, start, end, interval)
 }
