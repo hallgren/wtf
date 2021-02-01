@@ -27,8 +27,7 @@ type ESDial struct {
 	ID int `json:"id"`
 
 	// Owner of the dial. Only the owner may delete the dial.
-	UserID int   `json:"userID"`
-	User   *User `json:"user"`
+	UserID int `json:"userID"`
 
 	// Human-readable name of the dial.
 	Name string `json:"name"`
