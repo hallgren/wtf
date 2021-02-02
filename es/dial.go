@@ -29,7 +29,6 @@ func (s *DialService) Subscribe() {
 		fmt.Println(e)
 	})
 	subscription.Subscribe()
-
 }
 
 func (s *DialService) CreateDial(ctx context.Context, dial *wtf.Dial) error {
