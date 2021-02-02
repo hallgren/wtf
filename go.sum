@@ -203,6 +203,8 @@ github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0/go.mod h1:8NvIoxWQoOIhqOTXgf
 github.com/grpc-ecosystem/grpc-gateway v1.9.5/go.mod h1:vNeuVxBJEsws4ogUvrchl83t/GYV9WGTSLVdBhOQFDY=
 github.com/hallgren/eventsourcing v0.0.13 h1:SF071Rjdo24BddAmBi+3VGGpX94oYXehIe1MfK3zudU=
 github.com/hallgren/eventsourcing v0.0.13/go.mod h1:rODloJ0HuAQ4fGafaKciOMA/6vyTuCA01Ht1hyK2EWA=
+github.com/hallgren/eventsourcing v0.0.14 h1:ffoJtxPBiiZY8Q2Yl7R7ZAXx/f6kJhkBiOre/djAgfU=
+github.com/hallgren/eventsourcing v0.0.14/go.mod h1:rODloJ0HuAQ4fGafaKciOMA/6vyTuCA01Ht1hyK2EWA=
 github.com/hallgren/eventsourcing/eventstore/sql v0.0.4 h1:6sF4XjmMcb5YFYtRiYerj5rBTD+Oee3F8MIWl99gTJg=
 github.com/hallgren/eventsourcing/eventstore/sql v0.0.4/go.mod h1:MA3PBqWVYhVarRc6XEHI85F9O+8bdgDeBFSUfl2Q2Fk=
 github.com/hashicorp/consul/api v1.3.0/go.mod h1:MmDNSzIMUjNpY/mQ398R4bk2FnqQLoPndWW5VkKPlCE=
