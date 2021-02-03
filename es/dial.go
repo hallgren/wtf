@@ -3,6 +3,7 @@ package es
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/benbjohnson/wtf"
@@ -37,6 +38,12 @@ func (s *DialService) CreateDial(ctx context.Context, dial *wtf.Dial) error {
 	if err != nil {
 		return err
 	}
+	id, err := strconv.Atoi(d.AggregateID)
+	if err != nil {
+		return err
+	}
+	// set the dial id
+	dial.ID = id
 	return s.repo.Save(d)
 }
 
