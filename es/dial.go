@@ -25,9 +25,10 @@ func NewDialService(repo *eventsourcing.Repository, s *sqlite.DialService) *Dial
 	return &DialService{repo: repo, s: s}
 }
 
-func (s *DialService) Subscribe() {
+func (s *DialService) Subscribe(c chan eventsourcing.Event) {
 	subscription := s.repo.SubscriberAll(func(e eventsourcing.Event) {
 		fmt.Println(e)
+		c <- e
 	})
 	subscription.Subscribe()
 }
