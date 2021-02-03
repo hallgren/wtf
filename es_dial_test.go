@@ -33,6 +33,15 @@ func TestCreateDial(t *testing.T) {
 	if dial.InviteCode == "" {
 		t.Fatal("expected invite code to be set")
 	}
+	if len(dial.Events()) != 2 {
+		t.Fatalf("expected 2 events got %d", len(dial.Events()))
+	}
+	if dial.Events()[0].Reason != "Created" {
+		t.Fatalf("expected first event to be a Created events was %s", dial.Events()[0].Reason)
+	}
+	if dial.Events()[1].Reason != "SelfMembershipCreated" {
+		t.Fatalf("expected second event to be a SelfMembershipCreate events was %s", dial.Events()[1].Reason)
+	}
 }
 
 func TestAddMembership(t *testing.T) {

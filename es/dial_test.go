@@ -38,8 +38,19 @@ func TestCreateDial(t *testing.T) {
 	}()
 
 	count := 0
-	// loop channel until its closed
-	for range c {
+	// loop channel until it's closed
+	for e := range c {
+		if count == 0 {
+			_, ok := e.Data.(*wtf.Created)
+			if !ok {
+				t.Fatalf("expected Created was %s", e.Reason)
+			}
+		} else if count == 1 {
+			_, ok := e.Data.(*wtf.SelfMembershipCreated)
+			if !ok {
+				t.Fatalf("expected  SelfMembershipCreated was %s", e.Reason)
+			}
+		}
 		count++
 	}
 	if count != 2 {
