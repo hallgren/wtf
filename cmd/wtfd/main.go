@@ -13,10 +13,13 @@ import (
 	"strings"
 
 	"github.com/benbjohnson/wtf"
+	"github.com/benbjohnson/wtf/es"
 	"github.com/benbjohnson/wtf/http"
 	"github.com/benbjohnson/wtf/http/html"
 	"github.com/benbjohnson/wtf/inmem"
 	"github.com/benbjohnson/wtf/sqlite"
+	"github.com/hallgren/eventsourcing"
+	"github.com/hallgren/eventsourcing/eventstore/memory"
 	"github.com/pelletier/go-toml"
 	"github.com/rollbar/rollbar-go"
 )
@@ -177,9 +180,13 @@ func (m *Main) Run(ctx context.Context) (err error) {
 		return fmt.Errorf("cannot open db: %w", err)
 	}
 
+	// Create a repo to handle event sourced
+	repo := eventsourcing.NewRepository(memory.Create(), nil)
+
 	// Instantiate SQLite-backed services.
 	authService := sqlite.NewAuthService(m.DB)
 	dialService := sqlite.NewDialService(m.DB)
+	dialServiceES := es.NewDialService(repo, dialService)
 	dialMembershipService := sqlite.NewDialMembershipService(m.DB)
 	userService := sqlite.NewUserService(m.DB)
 
@@ -199,7 +206,7 @@ func (m *Main) Run(ctx context.Context) (err error) {
 
 	// Attach underlying services to the HTTP server.
 	m.HTTPServer.AuthService = authService
-	m.HTTPServer.DialService = dialService
+	m.HTTPServer.DialService = dialServiceES
 	m.HTTPServer.DialMembershipService = dialMembershipService
 	m.HTTPServer.EventService = eventService
 	m.HTTPServer.UserService = userService
