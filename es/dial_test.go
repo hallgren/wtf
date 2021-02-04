@@ -20,22 +20,20 @@ func TestCreateDial(t *testing.T) {
 	repo := eventsourcing.NewRepository(m, nil)
 	sqlDialSerive := sqlite.NewDialService(db)
 	dialService := es.NewDialService(repo, sqlDialSerive)
-	c := make(chan eventsourcing.Event)
+	c := make(chan eventsourcing.Event, 5)
 	dialService.Subscribe(c)
 
-	go func() {
-		dial := wtf.Dial{
-			Name: "test",
-		}
-		err := dialService.CreateDial(context.Background(), &dial)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if dial.ID == 0 {
-			t.Fatal("id was not set")
-		}
-		close(c)
-	}()
+	dial := wtf.Dial{
+		Name: "test",
+	}
+	err := dialService.CreateDial(context.Background(), &dial)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dial.ID == 0 {
+		t.Fatal("id was not set")
+	}
+	close(c)
 
 	count := 0
 	// loop channel until it's closed
