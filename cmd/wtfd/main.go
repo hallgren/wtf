@@ -6,11 +6,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"os"
 	"os/signal"
 	"os/user"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/benbjohnson/wtf"
 	"github.com/benbjohnson/wtf/es"
@@ -36,6 +39,11 @@ func main() {
 	// Propagate build information to root package to share globally.
 	wtf.Version = strings.TrimPrefix(version, "")
 	wtf.Commit = commit
+
+	eventsourcing.SetIDFunc(func() string {
+		rand.Seed(time.Now().UnixNano())
+		return strconv.Itoa(rand.Intn(100000))
+	})
 
 	// Setup signal handlers.
 	ctx, cancel := context.WithCancel(context.Background())
@@ -210,6 +218,8 @@ func (m *Main) Run(ctx context.Context) (err error) {
 	m.HTTPServer.DialMembershipService = dialMembershipService
 	m.HTTPServer.EventService = eventService
 	m.HTTPServer.UserService = userService
+
+	dialServiceES.Start()
 
 	// Start the HTTP server.
 	if err := m.HTTPServer.Open(); err != nil {

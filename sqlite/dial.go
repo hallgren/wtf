@@ -72,6 +72,17 @@ func (s *DialService) FindDials(ctx context.Context, filter wtf.DialFilter) ([]*
 	return dials, n, nil
 }
 
+func (s *DialService) CreateDialFromEvent(ctx context.Context, event *wtf.Created, t time.Time) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	createDialFromEvent(ctx, tx, event, t)
+	return tx.Commit()
+}
+
 // CreateDial creates a new dial and assigns the current user as the owner.
 // The owner will automatically be added as a member of the new dial.
 func (s *DialService) CreateDial(ctx context.Context, dial *wtf.Dial) error {
@@ -347,6 +358,29 @@ func findDials(ctx context.Context, tx *Tx, filter wtf.DialFilter) (_ []*wtf.Dia
 	}
 
 	return dials, n, nil
+}
+
+func createDialFromEvent(ctx context.Context, tx *Tx, event *wtf.Created, t time.Time) {
+	// Insert row into database.
+	_, err := tx.ExecContext(ctx, `
+		INSERT INTO dials (
+			user_id,
+			name,
+			invite_code,
+			created_at,
+			updated_at
+		)
+		VALUES (?, ?, ?, ?, ?)
+	`,
+		event.OwnerID,
+		event.Name,
+		event.InviteCode,
+		(*NullTime)(&t),
+		(*NullTime)(&t),
+	)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // createDial creates a new dial.

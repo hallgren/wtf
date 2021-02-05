@@ -49,6 +49,19 @@ type ESDial struct {
 	Memberships []*DialMembership `json:"memberships,omitempty"`
 }
 
+func (d *ESDial) Convert(id int) *Dial {
+	return &Dial{
+		ID:          id,
+		Name:        d.Name,
+		UserID:      d.UserID,
+		InviteCode:  d.InviteCode,
+		CreatedAt:   d.CreatedAt,
+		UpdatedAt:   d.UpdatedAt,
+		Value:       d.Value,
+		Memberships: d.Memberships,
+	}
+}
+
 // Created event happends when the dial is first created
 type Created struct {
 	OwnerID    int
@@ -82,9 +95,12 @@ func (d *ESDial) Transition(event eventsourcing.Event) {
 
 	case *SelfMembershipCreated:
 		membership := DialMembership{
-			ID:     e.ID,
-			Value:  e.Value,
-			UserID: d.UserID,
+			ID: e.ID,
+			//DialID:    d.ID(),
+			Value:     e.Value,
+			UserID:    d.UserID,
+			CreatedAt: event.Timestamp,
+			UpdatedAt: event.Timestamp,
 		}
 		d.Memberships = append(d.Memberships, &membership)
 		d.UpdatedAt = event.Timestamp

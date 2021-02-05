@@ -83,6 +83,7 @@ func (db *DB) Open() (err error) {
 		}
 	}
 
+	fmt.Println(db.DSN)
 	// Connect to the database.
 	if db.db, err = sql.Open("sqlite3", db.DSN); err != nil {
 		return err

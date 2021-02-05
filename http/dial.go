@@ -12,6 +12,7 @@ import (
 	"github.com/benbjohnson/wtf"
 	"github.com/benbjohnson/wtf/csv"
 	"github.com/benbjohnson/wtf/http/html"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
 )
 
@@ -128,6 +129,7 @@ func (s *Server) handleDialView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	spew.Dump(dial.Memberships)
 	// Format returned data based on HTTP accept header.
 	switch r.Header.Get("Accept") {
 	case "application/json":

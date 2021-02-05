@@ -22,6 +22,7 @@ func TestCreateDial(t *testing.T) {
 	dialService := es.NewDialService(repo, sqlDialSerive)
 	c := make(chan eventsourcing.Event, 5)
 	dialService.Subscribe(c)
+	dialService.Start()
 
 	dial := wtf.Dial{
 		Name: "test",

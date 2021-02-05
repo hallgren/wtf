@@ -2,6 +2,7 @@ package es
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -24,11 +25,24 @@ func NewDialService(repo *eventsourcing.Repository, s *sqlite.DialService) *Dial
 	return &DialService{repo: repo, s: s}
 }
 
+// Subscribe is currently only for testing but will probably fade away
 func (s *DialService) Subscribe(c chan eventsourcing.Event) {
 	subscription := s.repo.SubscriberAll(func(e eventsourcing.Event) {
 		c <- e
 	})
 	subscription.Subscribe()
+}
+
+func (s *DialService) Start() {
+	// consume the Event chan and build the read model
+
+	subscription := s.repo.SubscriberSpecificEvent(func(e eventsourcing.Event) {
+		// build the readmodel in the sqlite database
+		fmt.Println(e)
+		ce := e.Data.(*wtf.Created)
+		s.s.CreateDialFromEvent(context.Background(), ce, e.Timestamp)
+	}, &wtf.Created{})
+	go subscription.Subscribe()
 }
 
 func (s *DialService) CreateDial(ctx context.Context, dial *wtf.Dial) error {
@@ -47,7 +61,9 @@ func (s *DialService) CreateDial(ctx context.Context, dial *wtf.Dial) error {
 }
 
 func (s *DialService) FindDialByID(ctx context.Context, id int) (*wtf.Dial, error) {
-	return s.s.FindDialByID(ctx, id)
+	dial := wtf.ESDial{}
+	s.repo.Get(fmt.Sprint(id), &dial)
+	return dial.Convert(id), nil
 }
 
 func (s *DialService) FindDials(ctx context.Context, filter wtf.DialFilter) ([]*wtf.Dial, int, error) {
