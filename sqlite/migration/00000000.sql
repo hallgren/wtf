@@ -43,7 +43,7 @@ CREATE TABLE dial_values (
 );
 
 CREATE TABLE dial_memberships (
-	id         INTEGER PRIMARY KEY AUTOINCREMENT,
+	id         INTEGER PRIMARY KEY,
 	dial_id    INTEGER NOT NULL REFERENCES dials (id) ON DELETE CASCADE,
 	user_id    INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
 	value      INTEGER NOT NULL,

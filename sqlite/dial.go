@@ -420,14 +420,16 @@ func createSelfMembershipFromEvent(ctx context.Context, tx *Tx, event eventsourc
 	// Execute query to insert membership.
 	_, err = tx.ExecContext(ctx, `
 		INSERT INTO dial_memberships (
+		    id,
 			dial_id,
 			user_id,
 			value,
 			created_at,
 			updated_at
 		)
-		VALUES (?, ?, ?, ?, ?)
+		VALUES (?, ?, ?, ?, ?, ?)
 	`,
+		createSelfMembershipEvent.ID,
 		dialID,
 		createSelfMembershipEvent.UserID,
 		createSelfMembershipEvent.Value,

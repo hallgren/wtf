@@ -155,7 +155,13 @@ func NewDial(userID, value int, name string) (*ESDial, error) {
 
 	ic := hex.EncodeToString(inviteCode)
 	dial.TrackChange(&dial, &Created{OwnerID: userID, Name: name, InviteCode: ic})
-	dial.TrackChange(&dial, &SelfMembershipCreated{ID: 1, Value: value, UserID: userID})
+
+	membershipID,err := strconv.Atoi(id())
+	if err != nil {
+		return nil, err
+	}
+
+	dial.TrackChange(&dial, &SelfMembershipCreated{ID: membershipID, Value: value, UserID: userID})
 	return &dial, nil
 }
 
