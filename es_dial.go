@@ -1,11 +1,13 @@
 package wtf
 
 import (
-	"crypto/rand"
+	crypto "crypto/rand"
+	"math/rand"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
 	"time"
 
 	"github.com/hallgren/eventsourcing"
@@ -62,7 +64,7 @@ func (d *ESDial) Convert(id int) *Dial {
 	}
 }
 
-// Created event happends when the dial is first created
+// Created event happens when the dial is first created
 type Created struct {
 	OwnerID    int
 	Name       string
@@ -72,6 +74,7 @@ type Created struct {
 // SelfMembershipCreated event is attached when the dial is created
 type SelfMembershipCreated struct {
 	ID    int
+	UserID int
 	Value int
 }
 
@@ -94,11 +97,15 @@ func (d *ESDial) Transition(event eventsourcing.Event) {
 		d.UpdatedAt = event.Timestamp
 
 	case *SelfMembershipCreated:
+		dialID, err := strconv.Atoi(event.AggregateID)
+		if err != nil {
+			panic(err)
+		}
 		membership := DialMembership{
 			ID: e.ID,
-			//DialID:    d.ID(),
+			DialID:  dialID,
 			Value:     e.Value,
-			UserID:    d.UserID,
+			UserID:    e.UserID,
 			CreatedAt: event.Timestamp,
 			UpdatedAt: event.Timestamp,
 		}
@@ -128,21 +135,27 @@ func (d *ESDial) Transition(event eventsourcing.Event) {
 	}
 }
 
+func id() string {
+	rand.Seed(time.Now().UnixNano())
+	return strconv.Itoa(rand.Intn(100000))
+}
+
 func NewDial(userID, value int, name string) (*ESDial, error) {
 	if name == "" {
 		return nil, errors.New("name can't be empty")
 	}
 	dial := ESDial{}
+	dial.SetID(id())
 
 	// Generate a random invite code.
 	inviteCode := make([]byte, 16)
-	if _, err := io.ReadFull(rand.Reader, inviteCode); err != nil {
+	if _, err := io.ReadFull(crypto.Reader, inviteCode); err != nil {
 		return nil, err
 	}
 
 	ic := hex.EncodeToString(inviteCode)
 	dial.TrackChange(&dial, &Created{OwnerID: userID, Name: name, InviteCode: ic})
-	dial.TrackChange(&dial, &SelfMembershipCreated{ID: 1, Value: value})
+	dial.TrackChange(&dial, &SelfMembershipCreated{ID: 1, Value: value, UserID: userID})
 	return &dial, nil
 }
 

@@ -23,7 +23,7 @@ CREATE TABLE auths (
 );
 
 CREATE TABLE dials (
-	id          INTEGER PRIMARY KEY AUTOINCREMENT,
+	id          INTEGER PRIMARY KEY,
 	user_id     INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
 	name        TEXT NOT NULL,
 	invite_code TEXT UNIQUE NOT NULL,

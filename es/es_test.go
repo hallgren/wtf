@@ -1,16 +1,13 @@
 package es_test
 
 import (
+	"context"
 	"flag"
-	"io/ioutil"
-	"math/rand"
-	"path/filepath"
-	"strconv"
-	"testing"
-	"time"
-
+	"github.com/benbjohnson/wtf"
 	"github.com/benbjohnson/wtf/sqlite"
-	"github.com/hallgren/eventsourcing"
+	"io/ioutil"
+	"path/filepath"
+	"testing"
 )
 
 var dump = flag.Bool("dump", false, "save work data")
@@ -46,9 +43,11 @@ func MustCloseDB(tb testing.TB, db *sqlite.DB) {
 	}
 }
 
-func MustSetIDFunc() {
-	eventsourcing.SetIDFunc(func() string {
-		rand.Seed(time.Now().UnixNano())
-		return strconv.Itoa(rand.Intn(100000))
-	})
+// MustCreateUser creates a user in the database. Fatal on error.
+func MustCreateUser(tb testing.TB, ctx context.Context, db *sqlite.DB, user *wtf.User) (*wtf.User, context.Context) {
+	tb.Helper()
+	if err := sqlite.NewUserService(db).CreateUser(ctx, user); err != nil {
+		tb.Fatal(err)
+	}
+	return user, wtf.NewContextWithUser(ctx, user)
 }

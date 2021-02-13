@@ -6,7 +6,9 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
+	"github.com/hallgren/eventsourcing"
 	"io"
+	"strconv"
 	"strings"
 	"time"
 
@@ -72,14 +74,25 @@ func (s *DialService) FindDials(ctx context.Context, filter wtf.DialFilter) ([]*
 	return dials, n, nil
 }
 
-func (s *DialService) CreateDialFromEvent(ctx context.Context, event *wtf.Created, t time.Time) error {
+func (s *DialService) CreateDialFromEvent(ctx context.Context, event eventsourcing.Event) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	createDialFromEvent(ctx, tx, event, t)
+	createDialFromEvent(ctx, tx, event)
+	return tx.Commit()
+}
+
+func (s *DialService) CreateSelfMembershipFromEvent(ctx context.Context, event eventsourcing.Event) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	createSelfMembershipFromEvent(ctx, tx, event)
 	return tx.Commit()
 }
 
@@ -360,23 +373,66 @@ func findDials(ctx context.Context, tx *Tx, filter wtf.DialFilter) (_ []*wtf.Dia
 	return dials, n, nil
 }
 
-func createDialFromEvent(ctx context.Context, tx *Tx, event *wtf.Created, t time.Time) {
+func createDialFromEvent(ctx context.Context, tx *Tx, event eventsourcing.Event) {
+	fmt.Println(event)
+	createdEvent := event.Data.(*wtf.Created)
+	fmt.Println("createdEvent", createdEvent)
+	id, err := strconv.Atoi(event.AggregateID)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(id, createdEvent.OwnerID)
+
 	// Insert row into database.
-	_, err := tx.ExecContext(ctx, `
+	_, err = tx.ExecContext(ctx, `
 		INSERT INTO dials (
+		    id,
 			user_id,
 			name,
 			invite_code,
 			created_at,
 			updated_at
 		)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`,
+		id,
+		createdEvent.OwnerID,
+		createdEvent.Name,
+		createdEvent.InviteCode,
+		(*NullTime)(&event.Timestamp),
+		(*NullTime)(&event.Timestamp),
+	)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func createSelfMembershipFromEvent(ctx context.Context, tx *Tx, event eventsourcing.Event) {
+	createSelfMembershipEvent := event.Data.(*wtf.SelfMembershipCreated)
+
+	dialID, err := strconv.Atoi(event.AggregateID)
+	if err != nil {
+		panic(err)
+	}
+
+	// Insert row into database.
+	// Execute query to insert membership.
+	_, err = tx.ExecContext(ctx, `
+		INSERT INTO dial_memberships (
+			dial_id,
+			user_id,
+			value,
+			created_at,
+			updated_at
+		)
 		VALUES (?, ?, ?, ?, ?)
 	`,
-		event.OwnerID,
-		event.Name,
-		event.InviteCode,
-		(*NullTime)(&t),
-		(*NullTime)(&t),
+		dialID,
+		createSelfMembershipEvent.UserID,
+		createSelfMembershipEvent.Value,
+		(*NullTime)(&event.Timestamp),
+		(*NullTime)(&event.Timestamp),
 	)
 	if err != nil {
 		panic(err)

@@ -12,7 +12,6 @@ import (
 )
 
 func TestCreateDial(t *testing.T) {
-	MustSetIDFunc()
 	m := memory.Create()
 	defer m.Close()
 	db := MustOpenDB(t)
@@ -27,7 +26,8 @@ func TestCreateDial(t *testing.T) {
 	dial := wtf.Dial{
 		Name: "test",
 	}
-	err := dialService.CreateDial(context.Background(), &dial)
+	_, ctx0 := MustCreateUser(t, context.Background(), db, &wtf.User{Name: "jane", Email: "jane@gmail.com"})
+	err := dialService.CreateDial(ctx0, &dial)
 	if err != nil {
 		t.Fatal(err)
 	}

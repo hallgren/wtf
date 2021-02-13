@@ -37,12 +37,17 @@ func (s *DialService) Start() {
 	// consume the Event chan and build the read model
 
 	subscription := s.repo.SubscriberSpecificEvent(func(e eventsourcing.Event) {
-		// build the readmodel in the sqlite database
+		// build the read model in the sqlite database
 		fmt.Println(e)
-		ce := e.Data.(*wtf.Created)
-		s.s.CreateDialFromEvent(context.Background(), ce, e.Timestamp)
+		s.s.CreateDialFromEvent(context.Background(), e)
 	}, &wtf.Created{})
 	go subscription.Subscribe()
+
+	subscriptionSelfMember := s.repo.SubscriberSpecificEvent(func(e eventsourcing.Event) {
+		// build the read model in the sqlite database
+		s.s.CreateSelfMembershipFromEvent(context.Background(), e)
+	}, &wtf.SelfMembershipCreated{})
+	go subscriptionSelfMember.Subscribe()
 }
 
 func (s *DialService) CreateDial(ctx context.Context, dial *wtf.Dial) error {
