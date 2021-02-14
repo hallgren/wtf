@@ -48,6 +48,12 @@ func (s *DialService) Start() {
 		s.s.CreateSelfMembershipFromEvent(context.Background(), e)
 	}, &wtf.SelfMembershipCreated{})
 	go subscriptionSelfMember.Subscribe()
+
+	subscriptionMembership := s.repo.SubscriberSpecificEvent(func(e eventsourcing.Event) {
+		// build the read model in the sqlite database
+		s.s.CreateMembershipFromEvent(context.Background(), e)
+	}, &wtf.MembershipCreated{})
+	go subscriptionMembership.Subscribe()
 }
 
 func (s *DialService) CreateDial(ctx context.Context, dial *wtf.Dial) error {

@@ -6,11 +6,12 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
-	"github.com/hallgren/eventsourcing"
 	"io"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/hallgren/eventsourcing"
 
 	"github.com/benbjohnson/wtf"
 )
@@ -93,6 +94,17 @@ func (s *DialService) CreateSelfMembershipFromEvent(ctx context.Context, event e
 	defer tx.Rollback()
 
 	createSelfMembershipFromEvent(ctx, tx, event)
+	return tx.Commit()
+}
+
+func (s *DialService) CreateMembershipFromEvent(ctx context.Context, event eventsourcing.Event) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	createMembershipFromEvent(ctx, tx, event)
 	return tx.Commit()
 }
 
@@ -374,7 +386,6 @@ func findDials(ctx context.Context, tx *Tx, filter wtf.DialFilter) (_ []*wtf.Dia
 }
 
 func createDialFromEvent(ctx context.Context, tx *Tx, event eventsourcing.Event) {
-	fmt.Println(event)
 	createdEvent := event.Data.(*wtf.Created)
 	fmt.Println("createdEvent", createdEvent)
 	id, err := strconv.Atoi(event.AggregateID)
@@ -433,6 +444,39 @@ func createSelfMembershipFromEvent(ctx context.Context, tx *Tx, event eventsourc
 		dialID,
 		createSelfMembershipEvent.UserID,
 		createSelfMembershipEvent.Value,
+		(*NullTime)(&event.Timestamp),
+		(*NullTime)(&event.Timestamp),
+	)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func createMembershipFromEvent(ctx context.Context, tx *Tx, event eventsourcing.Event) {
+	createdMembershipEvent := event.Data.(*wtf.MembershipCreated)
+
+	dialID, err := strconv.Atoi(event.AggregateID)
+	if err != nil {
+		panic(err)
+	}
+
+	// Insert row into database.
+	// Execute query to insert membership.
+	_, err = tx.ExecContext(ctx, `
+		INSERT INTO dial_memberships (
+		    id,
+			dial_id,
+			user_id,
+			value,
+			created_at,
+			updated_at
+		)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`,
+		createdMembershipEvent.ID,
+		dialID,
+		createdMembershipEvent.UserID,
+		createdMembershipEvent.Value,
 		(*NullTime)(&event.Timestamp),
 		(*NullTime)(&event.Timestamp),
 	)

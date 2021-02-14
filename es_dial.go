@@ -2,11 +2,11 @@ package wtf
 
 import (
 	crypto "crypto/rand"
-	"math/rand"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"strconv"
 	"time"
 
@@ -73,9 +73,9 @@ type Created struct {
 
 // SelfMembershipCreated event is attached when the dial is created
 type SelfMembershipCreated struct {
-	ID    int
+	ID     int
 	UserID int
-	Value int
+	Value  int
 }
 
 // MembershipCreated event when a user is adding a dial membership
@@ -102,8 +102,8 @@ func (d *ESDial) Transition(event eventsourcing.Event) {
 			panic(err)
 		}
 		membership := DialMembership{
-			ID: e.ID,
-			DialID:  dialID,
+			ID:        e.ID,
+			DialID:    dialID,
 			Value:     e.Value,
 			UserID:    e.UserID,
 			CreatedAt: event.Timestamp,
@@ -156,7 +156,7 @@ func NewDial(userID, value int, name string) (*ESDial, error) {
 	ic := hex.EncodeToString(inviteCode)
 	dial.TrackChange(&dial, &Created{OwnerID: userID, Name: name, InviteCode: ic})
 
-	membershipID,err := strconv.Atoi(id())
+	membershipID, err := strconv.Atoi(id())
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +172,11 @@ func (d *ESDial) AddMembership(userID int, value int) error {
 			return fmt.Errorf("user membership already exist")
 		}
 	}
-	d.TrackChange(d, &MembershipCreated{UserID: userID, Value: value})
+	membershipID, err := strconv.Atoi(id())
+	if err != nil {
+		return err
+	}
+	d.TrackChange(d, &MembershipCreated{ID: membershipID, UserID: userID, Value: value})
 	return nil
 }
 
