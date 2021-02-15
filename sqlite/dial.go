@@ -108,6 +108,17 @@ func (s *DialService) CreateMembershipFromEvent(ctx context.Context, event event
 	return tx.Commit()
 }
 
+func (s *DialService) UpdateDialFromEvent(ctx context.Context, event eventsourcing.Event) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	UpdateNameFromEvent(ctx, tx, event)
+	return tx.Commit()
+}
+
 // CreateDial creates a new dial and assigns the current user as the owner.
 // The owner will automatically be added as a member of the new dial.
 func (s *DialService) CreateDial(ctx context.Context, dial *wtf.Dial) error {
@@ -481,6 +492,29 @@ func createMembershipFromEvent(ctx context.Context, tx *Tx, event eventsourcing.
 		(*NullTime)(&event.Timestamp),
 	)
 	if err != nil {
+		panic(err)
+	}
+}
+
+func UpdateNameFromEvent(ctx context.Context, tx *Tx, event eventsourcing.Event) {
+	setNameEvent := event.Data.(*wtf.SetNewName)
+
+	dialID, err := strconv.Atoi(event.AggregateID)
+	if err != nil {
+		panic(err)
+	}
+
+	// Execute update query.
+	if _, err := tx.ExecContext(ctx, `
+		UPDATE dials
+		SET name = ?,
+		    updated_at = ?
+		WHERE id = ?
+	`,
+		setNameEvent.Name,
+		(*NullTime)(&event.Timestamp),
+		dialID,
+	); err != nil {
 		panic(err)
 	}
 }

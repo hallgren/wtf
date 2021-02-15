@@ -2,6 +2,7 @@ package es
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -14,7 +15,6 @@ import (
 var _ wtf.DialService = (*DialService)(nil)
 
 type DialService struct {
-	UpdateDialFn             func(ctx context.Context, id int, upd wtf.DialUpdate) (*wtf.Dial, error)
 	DeleteDialFn             func(ctx context.Context, id int) error
 	SetDialMembershipValueFn func(ctx context.Context, dialID, value int) error
 	s                        *sqlite.DialService
@@ -54,6 +54,12 @@ func (s *DialService) Start() {
 		s.s.CreateMembershipFromEvent(context.Background(), e)
 	}, &wtf.MembershipCreated{})
 	go subscriptionMembership.Subscribe()
+
+	subscriptionUpdateDial := s.repo.SubscriberSpecificEvent(func(e eventsourcing.Event) {
+		// build the read model in the sqlite database
+		s.s.UpdateDialFromEvent(context.Background(), e)
+	}, &wtf.SetNewName{})
+	go subscriptionUpdateDial.Subscribe()
 }
 
 func (s *DialService) CreateDial(ctx context.Context, dial *wtf.Dial) error {
@@ -82,7 +88,14 @@ func (s *DialService) FindDials(ctx context.Context, filter wtf.DialFilter) ([]*
 }
 
 func (s *DialService) UpdateDial(ctx context.Context, id int, upd wtf.DialUpdate) (*wtf.Dial, error) {
-	return s.UpdateDialFn(ctx, id, upd)
+	if upd.Name == nil {
+		return nil, errors.New("name can't be nil")
+	}
+	dial := wtf.ESDial{}
+	s.repo.Get(fmt.Sprint(id), &dial)
+	dial.SetNewName(*upd.Name)
+	s.repo.Save(&dial)
+	return dial.Convert(id), nil
 }
 
 func (s *DialService) DeleteDial(ctx context.Context, id int) error {

@@ -85,6 +85,11 @@ type MembershipCreated struct {
 	Value  int
 }
 
+// SetNewName update the dial name
+type SetNewName struct {
+	Name string
+}
+
 // Transition builds the dial entity from its events
 func (d *ESDial) Transition(event eventsourcing.Event) {
 	switch e := event.Data.(type) {
@@ -121,6 +126,10 @@ func (d *ESDial) Transition(event eventsourcing.Event) {
 			UpdatedAt: event.Timestamp,
 		}
 		d.Memberships = append(d.Memberships, &membership)
+		d.UpdatedAt = event.Timestamp
+
+	case *SetNewName:
+		d.Name = e.Name
 		d.UpdatedAt = event.Timestamp
 	}
 
@@ -163,6 +172,13 @@ func NewDial(userID, value int, name string) (*ESDial, error) {
 
 	dial.TrackChange(&dial, &SelfMembershipCreated{ID: membershipID, Value: value, UserID: userID})
 	return &dial, nil
+}
+
+// SetNewName sets new name if not the same
+func (d *ESDial) SetNewName(name string) {
+	if d.Name != name {
+		d.TrackChange(d, &SetNewName{Name: name})
+	}
 }
 
 func (d *ESDial) AddMembership(userID int, value int) error {

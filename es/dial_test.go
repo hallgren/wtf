@@ -23,16 +23,25 @@ func TestCreateDial(t *testing.T) {
 	dialService.Subscribe(c)
 	dialService.Start()
 
-	dial := wtf.Dial{
+	dial := &wtf.Dial{
 		Name: "test",
 	}
 	_, ctx0 := MustCreateUser(t, context.Background(), db, &wtf.User{Name: "jane", Email: "jane@gmail.com"})
-	err := dialService.CreateDial(ctx0, &dial)
+	err := dialService.CreateDial(ctx0, dial)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if dial.ID == 0 {
 		t.Fatal("id was not set")
+	}
+	name := "test2"
+	upd := wtf.DialUpdate{Name: &name}
+	dial, err = dialService.UpdateDial(ctx0, dial.ID, upd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dial.Name != name {
+		t.Fatal("wrong name after update")
 	}
 	close(c)
 
@@ -52,7 +61,7 @@ func TestCreateDial(t *testing.T) {
 		}
 		count++
 	}
-	if count != 2 {
-		t.Fatalf("expected 2 events got %d", count)
+	if count != 3 {
+		t.Fatalf("expected 3 events got %d", count)
 	}
 }

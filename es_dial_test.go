@@ -72,3 +72,17 @@ func TestAddExistingMembership(t *testing.T) {
 		t.Fatal("expected error user membership already exist, got none")
 	}
 }
+
+func TestUpdateDial(t *testing.T) {
+	dial, err := wtf.NewDial(1, 43, "123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dial.SetNewName("new name")
+	if len(dial.Events()) != 3 {
+		t.Fatalf("expected 3 events got %d", len(dial.Events()))
+	}
+	if dial.Name != "new name" {
+		t.Fatalf("expected Name to be new name was %s", dial.Name)
+	}
+}
