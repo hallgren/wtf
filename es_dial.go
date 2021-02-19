@@ -49,6 +49,8 @@ type ESDial struct {
 	// List of associated members and their contributing WTF level.
 	// This is only set when returning a single dial.
 	Memberships []*DialMembership `json:"memberships,omitempty"`
+
+	Deleted bool
 }
 
 func (d *ESDial) Convert(id int) *Dial {
@@ -89,6 +91,9 @@ type MembershipCreated struct {
 type SetNewName struct {
 	Name string
 }
+
+// Deleted indicates that the dial is no more
+type Deleted struct{}
 
 // Transition builds the dial entity from its events
 func (d *ESDial) Transition(event eventsourcing.Event) {
@@ -131,6 +136,8 @@ func (d *ESDial) Transition(event eventsourcing.Event) {
 	case *SetNewName:
 		d.Name = e.Name
 		d.UpdatedAt = event.Timestamp
+	case *Deleted:
+		d.Deleted = true
 	}
 
 	// calculate the dial value from the Memberships after the dial entity is built from all events
@@ -172,6 +179,18 @@ func NewDial(userID, value int, name string) (*ESDial, error) {
 
 	dial.TrackChange(&dial, &SelfMembershipCreated{ID: membershipID, Value: value, UserID: userID})
 	return &dial, nil
+}
+
+// Delete removes the dial
+func (d *ESDial) Delete(userID int) error {
+	if d.Deleted {
+		return fmt.Errorf("cant delete an already deleted dial")
+	}
+	if d.UserID != userID {
+		return fmt.Errorf("only the owner can delete the dial")
+	}
+	d.TrackChange(d, &Deleted{})
+	return nil
 }
 
 // SetNewName sets new name if not the same

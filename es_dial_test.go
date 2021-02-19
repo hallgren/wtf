@@ -97,3 +97,18 @@ func TestUpdateDialNoneOwner(t *testing.T) {
 		t.Fatal("expected error when updating name when not owner")
 	}
 }
+
+func TestDeleteDial(t *testing.T) {
+	dial, err := wtf.NewDial(1, 43, "123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = dial.Delete(123)
+	if err == nil {
+		t.Fatal("should not delete a dial when user is not owner")
+	}
+	err = dial.Delete(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
