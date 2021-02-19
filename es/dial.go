@@ -38,7 +38,6 @@ func (s *DialService) Start() {
 
 	subscription := s.repo.SubscriberSpecificEvent(func(e eventsourcing.Event) {
 		// build the read model in the sqlite database
-		fmt.Println(e)
 		s.s.CreateDialFromEvent(context.Background(), e)
 	}, &wtf.Created{})
 	go subscription.Subscribe()
@@ -79,8 +78,8 @@ func (s *DialService) CreateDial(ctx context.Context, dial *wtf.Dial) error {
 
 func (s *DialService) FindDialByID(ctx context.Context, id int) (*wtf.Dial, error) {
 	dial := wtf.ESDial{}
-	s.repo.Get(fmt.Sprint(id), &dial)
-	return dial.Convert(id), nil
+	err := s.repo.Get(fmt.Sprint(id), &dial)
+	return dial.Convert(id), err
 }
 
 func (s *DialService) FindDials(ctx context.Context, filter wtf.DialFilter) ([]*wtf.Dial, int, error) {
