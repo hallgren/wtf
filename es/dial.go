@@ -93,7 +93,8 @@ func (s *DialService) UpdateDial(ctx context.Context, id int, upd wtf.DialUpdate
 	}
 	dial := wtf.ESDial{}
 	s.repo.Get(fmt.Sprint(id), &dial)
-	dial.SetNewName(*upd.Name)
+	userID := wtf.UserIDFromContext(ctx)
+	dial.SetNewName(userID, *upd.Name)
 	s.repo.Save(&dial)
 	return dial.Convert(id), nil
 }

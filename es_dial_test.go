@@ -78,11 +78,22 @@ func TestUpdateDial(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	dial.SetNewName("new name")
+	dial.SetNewName(1, "new name")
 	if len(dial.Events()) != 3 {
 		t.Fatalf("expected 3 events got %d", len(dial.Events()))
 	}
 	if dial.Name != "new name" {
 		t.Fatalf("expected Name to be new name was %s", dial.Name)
+	}
+}
+
+func TestUpdateDialNoneOwner(t *testing.T) {
+	dial, err := wtf.NewDial(1, 43, "123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = dial.SetNewName(2, "new name")
+	if err == nil {
+		t.Fatal("expected error when updating name when not owner")
 	}
 }

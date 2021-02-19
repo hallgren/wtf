@@ -175,10 +175,15 @@ func NewDial(userID, value int, name string) (*ESDial, error) {
 }
 
 // SetNewName sets new name if not the same
-func (d *ESDial) SetNewName(name string) {
-	if d.Name != name {
-		d.TrackChange(d, &SetNewName{Name: name})
+func (d *ESDial) SetNewName(userID int, name string) error {
+	if d.UserID != userID {
+		return fmt.Errorf("only the owner can change the name")
 	}
+	if d.Name == name {
+		return fmt.Errorf("name is the same")
+	}
+	d.TrackChange(d, &SetNewName{Name: name})
+	return nil
 }
 
 func (d *ESDial) AddMembership(userID int, value int) error {
