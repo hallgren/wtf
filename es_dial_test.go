@@ -111,4 +111,12 @@ func TestDeleteDial(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	err = dial.Delete(1)
+	if err == nil {
+		t.Fatal("should not be able to rename a deleted dial")
+	}
+	err = dial.AddMembership(2, 33)
+	if err == nil {
+		t.Fatal("should not be able to add membership to deleted dial")
+	}
 }

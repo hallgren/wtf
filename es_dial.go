@@ -195,6 +195,9 @@ func (d *ESDial) Delete(userID int) error {
 
 // SetNewName sets new name if not the same
 func (d *ESDial) SetNewName(userID int, name string) error {
+	if d.Deleted {
+		return fmt.Errorf("can't change name on deleted dial")
+	}
 	if d.UserID != userID {
 		return fmt.Errorf("only the owner can change the name")
 	}
@@ -206,6 +209,9 @@ func (d *ESDial) SetNewName(userID int, name string) error {
 }
 
 func (d *ESDial) AddMembership(userID int, value int) error {
+	if d.Deleted {
+		return fmt.Errorf("can't add membership on deleted dial")
+	}
 	for _, membership := range d.Memberships {
 		fmt.Println(membership.UserID, userID)
 		if membership.UserID == userID {
