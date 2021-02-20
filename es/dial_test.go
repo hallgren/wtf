@@ -43,6 +43,10 @@ func TestCreateDial(t *testing.T) {
 	if dial.Name != name {
 		t.Fatal("wrong name after update")
 	}
+	err = dialService.DeleteDial(ctx0, dial.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
 	close(c)
 
 	count := 0
@@ -56,12 +60,22 @@ func TestCreateDial(t *testing.T) {
 		} else if count == 1 {
 			_, ok := e.Data.(*wtf.SelfMembershipCreated)
 			if !ok {
-				t.Fatalf("expected  SelfMembershipCreated was %s", e.Reason)
+				t.Fatalf("expected SelfMembershipCreated was %s", e.Reason)
+			}
+		} else if count == 2 {
+			_, ok := e.Data.(*wtf.SetNewName)
+			if !ok {
+				t.Fatalf("expected SetNewName was %s", e.Reason)
+			}
+		} else if count == 3 {
+			_, ok := e.Data.(*wtf.Deleted)
+			if !ok {
+				t.Fatalf("expected dial to be deleted was %s", e.Reason)
 			}
 		}
 		count++
 	}
-	if count != 3 {
-		t.Fatalf("expected 3 events got %d", count)
+	if count != 4 {
+		t.Fatalf("expected 4 events got %d", count)
 	}
 }

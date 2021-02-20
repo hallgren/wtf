@@ -15,7 +15,6 @@ import (
 var _ wtf.DialService = (*DialService)(nil)
 
 type DialService struct {
-	DeleteDialFn             func(ctx context.Context, id int) error
 	SetDialMembershipValueFn func(ctx context.Context, dialID, value int) error
 	s                        *sqlite.DialService
 	repo                     *eventsourcing.Repository
@@ -59,6 +58,12 @@ func (s *DialService) Start() {
 		s.s.UpdateDialFromEvent(context.Background(), e)
 	}, &wtf.SetNewName{})
 	go subscriptionUpdateDial.Subscribe()
+
+	subscriptionDeleteDial := s.repo.SubscriberSpecificEvent(func(e eventsourcing.Event) {
+		// build the read model in the sqlite database
+		s.s.DeletedDial(context.Background(), e)
+	}, &wtf.Deleted{})
+	go subscriptionDeleteDial.Subscribe()
 }
 
 func (s *DialService) CreateDial(ctx context.Context, dial *wtf.Dial) error {
@@ -99,7 +104,14 @@ func (s *DialService) UpdateDial(ctx context.Context, id int, upd wtf.DialUpdate
 }
 
 func (s *DialService) DeleteDial(ctx context.Context, id int) error {
-	return s.DeleteDialFn(ctx, id)
+	dial := wtf.ESDial{}
+	s.repo.Get(fmt.Sprint(id), &dial)
+	userID := wtf.UserIDFromContext(ctx)
+	err := dial.Delete(userID)
+	if err != nil {
+		return err
+	}
+	return s.repo.Save(&dial)
 }
 
 func (s *DialService) SetDialMembershipValue(ctx context.Context, dialID, value int) error {

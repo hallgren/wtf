@@ -119,6 +119,17 @@ func (s *DialService) UpdateDialFromEvent(ctx context.Context, event eventsourci
 	return tx.Commit()
 }
 
+func (s *DialService) DeletedDial(ctx context.Context, event eventsourcing.Event) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	DeletedFromEvent(ctx, tx, event)
+	return tx.Commit()
+}
+
 // CreateDial creates a new dial and assigns the current user as the owner.
 // The owner will automatically be added as a member of the new dial.
 func (s *DialService) CreateDial(ctx context.Context, dial *wtf.Dial) error {
@@ -515,6 +526,17 @@ func UpdateNameFromEvent(ctx context.Context, tx *Tx, event eventsourcing.Event)
 		(*NullTime)(&event.Timestamp),
 		dialID,
 	); err != nil {
+		panic(err)
+	}
+}
+
+func DeletedFromEvent(ctx context.Context, tx *Tx, event eventsourcing.Event) {
+	dialID, err := strconv.Atoi(event.AggregateID)
+	if err != nil {
+		panic(err)
+	}
+	// Remove row from database.
+	if _, err := tx.ExecContext(ctx, `DELETE FROM dials WHERE id = ?`, dialID); err != nil {
 		panic(err)
 	}
 }
