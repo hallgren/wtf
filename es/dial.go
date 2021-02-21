@@ -15,9 +15,8 @@ import (
 var _ wtf.DialService = (*DialService)(nil)
 
 type DialService struct {
-	SetDialMembershipValueFn func(ctx context.Context, dialID, value int) error
-	s                        *sqlite.DialService
-	repo                     *eventsourcing.Repository
+	s    *sqlite.DialService
+	repo *eventsourcing.Repository
 }
 
 func NewDialService(repo *eventsourcing.Repository, s *sqlite.DialService) *DialService {
@@ -64,6 +63,12 @@ func (s *DialService) Start() {
 		s.s.DeletedDial(context.Background(), e)
 	}, &wtf.Deleted{})
 	go subscriptionDeleteDial.Subscribe()
+
+	subscriptionMembershipUpdated := s.repo.SubscriberSpecificEvent(func(e eventsourcing.Event) {
+		// build the read model in the sqlite database
+		s.s.MembershipUpdated(context.Background(), e)
+	}, &wtf.MembershipUpdated{})
+	go subscriptionMembershipUpdated.Subscribe()
 }
 
 func (s *DialService) CreateDial(ctx context.Context, dial *wtf.Dial) error {
@@ -115,7 +120,14 @@ func (s *DialService) DeleteDial(ctx context.Context, id int) error {
 }
 
 func (s *DialService) SetDialMembershipValue(ctx context.Context, dialID, value int) error {
-	return s.SetDialMembershipValueFn(ctx, dialID, value)
+	dial := wtf.ESDial{}
+	s.repo.Get(fmt.Sprint(dialID), &dial)
+	userID := wtf.UserIDFromContext(ctx)
+	err := dial.SetMembershipValue(userID, value)
+	if err != nil {
+		return err
+	}
+	return s.repo.Save(&dial)
 }
 
 func (s *DialService) AverageDialValueReport(ctx context.Context, start, end time.Time, interval time.Duration) (*wtf.DialValueReport, error) {
