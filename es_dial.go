@@ -87,6 +87,12 @@ type MembershipCreated struct {
 	Value  int
 }
 
+// MembershipValueUpdated event when a user updates her/his dial value
+type MembershipUpdated struct {
+	ID    int
+	Value int
+}
+
 // SetNewName update the dial name
 type SetNewName struct {
 	Name string
@@ -97,6 +103,10 @@ type Deleted struct{}
 
 // Transition builds the dial entity from its events
 func (d *ESDial) Transition(event eventsourcing.Event) {
+	dialID, err := strconv.Atoi(event.AggregateID)
+	if err != nil {
+		panic(err)
+	}
 	switch e := event.Data.(type) {
 	case *Created:
 		d.Name = e.Name
@@ -104,13 +114,7 @@ func (d *ESDial) Transition(event eventsourcing.Event) {
 		d.UserID = e.OwnerID
 		d.InviteCode = e.InviteCode
 		d.Memberships = make([]*DialMembership, 0)
-		d.UpdatedAt = event.Timestamp
-
 	case *SelfMembershipCreated:
-		dialID, err := strconv.Atoi(event.AggregateID)
-		if err != nil {
-			panic(err)
-		}
 		membership := DialMembership{
 			ID:        e.ID,
 			DialID:    dialID,
@@ -120,22 +124,26 @@ func (d *ESDial) Transition(event eventsourcing.Event) {
 			UpdatedAt: event.Timestamp,
 		}
 		d.Memberships = append(d.Memberships, &membership)
-		d.UpdatedAt = event.Timestamp
-
 	case *MembershipCreated:
 		membership := DialMembership{
 			ID:        e.ID,
+			DialID:    dialID,
 			Value:     e.Value,
 			UserID:    e.UserID,
 			CreatedAt: event.Timestamp,
 			UpdatedAt: event.Timestamp,
 		}
 		d.Memberships = append(d.Memberships, &membership)
-		d.UpdatedAt = event.Timestamp
-
+	case *MembershipUpdated:
+		// find membership
+		for _, membership := range d.Memberships {
+			if membership.ID == e.ID {
+				membership.Value = e.Value
+				membership.UpdatedAt = event.Timestamp
+			}
+		}
 	case *SetNewName:
 		d.Name = e.Name
-		d.UpdatedAt = event.Timestamp
 	case *Deleted:
 		d.Deleted = true
 	}
@@ -149,6 +157,9 @@ func (d *ESDial) Transition(event eventsourcing.Event) {
 		}
 		d.Value = value / len(d.Memberships)
 	}
+
+	// update the UpdatedAt to the events timestamp
+	d.UpdatedAt = event.Timestamp
 }
 
 func id() string {
@@ -205,6 +216,16 @@ func (d *ESDial) SetNewName(userID int, name string) error {
 		return fmt.Errorf("name is the same")
 	}
 	d.TrackChange(d, &SetNewName{Name: name})
+	return nil
+}
+
+func (d *ESDial) SetMembershipValue(userID, value int) error {
+	// find membership
+	for _, membership := range d.Memberships {
+		if membership.UserID == userID {
+			d.TrackChange(d, &MembershipUpdated{ID: membership.ID, Value: value})
+		}
+	}
 	return nil
 }
 

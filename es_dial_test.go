@@ -60,6 +60,15 @@ func TestAddMembership(t *testing.T) {
 	if dial.Value != (33+43)/2 {
 		t.Fatalf("expected 38 in Value got %v", dial.Value)
 	}
+
+	// update membership value
+	err = dial.SetMembershipValue(2, 90)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dial.Value != (90+43)/2 {
+		t.Fatalf("expected 66 in Value got %v", dial.Value)
+	}
 }
 
 func TestAddExistingMembership(t *testing.T) {
