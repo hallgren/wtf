@@ -119,12 +119,18 @@ func (s *Server) handleDialMembershipUpdate(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Update membership.
-	membership, err := s.DialMembershipService.UpdateDialMembership(r.Context(), id, upd)
+	membership, err := s.DialMembershipService.FindDialMembershipByID(r.Context(), id)
 	if err != nil {
 		Error(w, r, err)
 		return
 	}
+	// Update membership.
+	err = s.DialService.SetDialMembershipValue(r.Context(), membership.DialID, *upd.Value)
+	if err != nil {
+		Error(w, r, err)
+		return
+	}
+	membership.Value = *upd.Value
 
 	// Write new membership state back as JSON response.
 	w.Header().Set("Content-type", "application/json")
