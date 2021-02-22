@@ -29,27 +29,28 @@ type ESDial struct {
 	eventsourcing.AggregateRoot
 
 	// Owner of the dial. Only the owner may delete the dial.
-	UserID int `json:"userID"`
+	UserID int
 
 	// Human-readable name of the dial.
-	Name string `json:"name"`
+	Name string
 
 	// Code used to share the dial with other users.
 	// It allows the creation of a shareable link without explicitly inviting users.
-	InviteCode string `json:"inviteCode,omitempty"`
+	InviteCode string
 
 	// Aggregate WTF level for the dial. This is a computed field based on the
 	// average value of each member's WTF level.
-	Value int `json:"value"`
+	Value int
 
 	// Timestamps for dial creation & last update.
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
 
 	// List of associated members and their contributing WTF level.
 	// This is only set when returning a single dial.
-	Memberships []*DialMembership `json:"memberships,omitempty"`
+	Memberships []*DialMembership
 
+	// Deleted indicates if the dial is deleted or not
 	Deleted bool
 }
 
