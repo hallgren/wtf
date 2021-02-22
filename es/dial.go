@@ -89,6 +89,9 @@ func (s *DialService) CreateDial(ctx context.Context, dial *wtf.Dial) error {
 func (s *DialService) FindDialByID(ctx context.Context, id int) (*wtf.Dial, error) {
 	dial := wtf.ESDial{}
 	err := s.repo.Get(fmt.Sprint(id), &dial)
+	if dial.Deleted {
+		return nil, &wtf.Error{Code: wtf.ENOTFOUND, Message: "Dial deleted"}
+	}
 	return dial.Convert(id), err
 }
 
