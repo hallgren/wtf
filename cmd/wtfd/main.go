@@ -194,7 +194,8 @@ func (m *Main) Run(ctx context.Context) (err error) {
 
 	err = sqlEventStore.Migrate()
 	if err != nil {
-		panic(err)
+		//panic(err)
+		fmt.Println(err)
 	}
 	// Create a repo to handle event sourced
 	repo := eventsourcing.NewRepository(sqlEventStore, nil)
