@@ -69,6 +69,11 @@ func NewDB(dsn string) *DB {
 	return db
 }
 
+// DB return the underlaying sql.DB
+func (db *DB) DB() *sql.DB {
+	return db.db
+}
+
 // Open opens the database connection.
 func (db *DB) Open() (err error) {
 	// Ensure a DSN is set before attempting to open the database.

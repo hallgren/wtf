@@ -2,18 +2,16 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"os"
 	"os/signal"
 	"os/user"
 	"path/filepath"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/benbjohnson/wtf"
 	"github.com/benbjohnson/wtf/es"
@@ -22,7 +20,7 @@ import (
 	"github.com/benbjohnson/wtf/inmem"
 	"github.com/benbjohnson/wtf/sqlite"
 	"github.com/hallgren/eventsourcing"
-	"github.com/hallgren/eventsourcing/eventstore/memory"
+	sqlES "github.com/hallgren/eventsourcing/eventstore/sql"
 	"github.com/pelletier/go-toml"
 	"github.com/rollbar/rollbar-go"
 )
@@ -39,11 +37,6 @@ func main() {
 	// Propagate build information to root package to share globally.
 	wtf.Version = strings.TrimPrefix(version, "")
 	wtf.Commit = commit
-
-	eventsourcing.SetIDFunc(func() string {
-		rand.Seed(time.Now().UnixNano())
-		return strconv.Itoa(rand.Intn(100000))
-	})
 
 	// Setup signal handlers.
 	ctx, cancel := context.WithCancel(context.Background())
@@ -188,8 +181,23 @@ func (m *Main) Run(ctx context.Context) (err error) {
 		return fmt.Errorf("cannot open db: %w", err)
 	}
 
+	ser := eventsourcing.NewSerializer(json.Marshal, json.Unmarshal)
+	ser.RegisterTypes(&wtf.ESDial{},
+		func() interface{} { return &wtf.Created{} },
+		func() interface{} { return &wtf.SelfMembershipCreated{} },
+		func() interface{} { return &wtf.MembershipCreated{} },
+		func() interface{} { return &wtf.MembershipUpdated{} },
+		func() interface{} { return &wtf.SetNewName{} },
+		func() interface{} { return &wtf.Deleted{} },
+	)
+	sqlEventStore := sqlES.Open(m.DB.DB(), *ser)
+
+	err = sqlEventStore.Migrate()
+	if err != nil {
+		panic(err)
+	}
 	// Create a repo to handle event sourced
-	repo := eventsourcing.NewRepository(memory.Create(), nil)
+	repo := eventsourcing.NewRepository(sqlEventStore, nil)
 
 	// Instantiate SQLite-backed services.
 	authService := sqlite.NewAuthService(m.DB)

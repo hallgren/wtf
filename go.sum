@@ -209,6 +209,8 @@ github.com/hallgren/eventsourcing v0.0.14 h1:ffoJtxPBiiZY8Q2Yl7R7ZAXx/f6kJhkBiOr
 github.com/hallgren/eventsourcing v0.0.14/go.mod h1:rODloJ0HuAQ4fGafaKciOMA/6vyTuCA01Ht1hyK2EWA=
 github.com/hallgren/eventsourcing/eventstore/sql v0.0.4 h1:6sF4XjmMcb5YFYtRiYerj5rBTD+Oee3F8MIWl99gTJg=
 github.com/hallgren/eventsourcing/eventstore/sql v0.0.4/go.mod h1:MA3PBqWVYhVarRc6XEHI85F9O+8bdgDeBFSUfl2Q2Fk=
+github.com/hallgren/eventsourcing/eventstore/sql v0.0.5 h1:aMn0tsbwBJoUApCSmnJOYrWcwFrIDVXKUB6Mwnu3bHE=
+github.com/hallgren/eventsourcing/eventstore/sql v0.0.5/go.mod h1:nNRDGjVh0q9Pjvqe0aQL28CsqfOuu4LUxaDNyz0GxEE=
 github.com/hashicorp/consul/api v1.3.0/go.mod h1:MmDNSzIMUjNpY/mQ398R4bk2FnqQLoPndWW5VkKPlCE=
 github.com/hashicorp/consul/sdk v0.3.0/go.mod h1:VKf9jXwCTEY1QZP2MOLRhb5i/I/ssyNV1vwHyQBF0x8=
 github.com/hashicorp/errwrap v1.0.0/go.mod h1:YH+1FKiLXxHSkmPseP+kNlulaMuP3n2brvKWEqk/Jc4=

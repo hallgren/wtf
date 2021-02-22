@@ -16,7 +16,7 @@ require (
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/websocket v1.4.2
 	github.com/hallgren/eventsourcing v0.0.14
-	github.com/hallgren/eventsourcing/eventstore/sql v0.0.4 // indirect
+	github.com/hallgren/eventsourcing/eventstore/sql v0.0.5
 	github.com/mattn/go-sqlite3 v1.14.4
 	github.com/pelletier/go-toml v1.8.1
 	github.com/prometheus/client_golang v1.9.0
