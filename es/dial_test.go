@@ -67,7 +67,7 @@ func TestCreateDial(t *testing.T) {
 				t.Fatalf("expected SelfMembershipCreated was %s", e.Reason)
 			}
 		} else if count == 2 {
-			_, ok := e.Data.(*wtf.SetNewName)
+			_, ok := e.Data.(*wtf.Renamed)
 			if !ok {
 				t.Fatalf("expected SetNewName was %s", e.Reason)
 			}

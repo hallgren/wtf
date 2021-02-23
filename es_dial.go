@@ -94,8 +94,8 @@ type MembershipUpdated struct {
 	Value int
 }
 
-// SetNewName update the dial name
-type SetNewName struct {
+// Renamed update the dial name
+type Renamed struct {
 	Name string
 }
 
@@ -143,7 +143,7 @@ func (d *ESDial) Transition(event eventsourcing.Event) {
 				membership.UpdatedAt = event.Timestamp
 			}
 		}
-	case *SetNewName:
+	case *Renamed:
 		d.Name = e.Name
 	case *Deleted:
 		d.Deleted = true
@@ -216,7 +216,7 @@ func (d *ESDial) SetNewName(userID int, name string) error {
 	if d.Name == name {
 		return fmt.Errorf("name is the same")
 	}
-	d.TrackChange(d, &SetNewName{Name: name})
+	d.TrackChange(d, &Renamed{Name: name})
 	return nil
 }
 

@@ -187,7 +187,7 @@ func (m *Main) Run(ctx context.Context) (err error) {
 		func() interface{} { return &wtf.SelfMembershipCreated{} },
 		func() interface{} { return &wtf.MembershipCreated{} },
 		func() interface{} { return &wtf.MembershipUpdated{} },
-		func() interface{} { return &wtf.SetNewName{} },
+		func() interface{} { return &wtf.Renamed{} },
 		func() interface{} { return &wtf.Deleted{} },
 	)
 	sqlEventStore := sqlES.Open(m.DB.DB(), *ser)

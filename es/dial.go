@@ -55,7 +55,7 @@ func (s *DialService) Start() {
 	subscriptionUpdateDial := s.repo.SubscriberSpecificEvent(func(e eventsourcing.Event) {
 		// build the read model in the sqlite database
 		s.s.UpdateDialFromEvent(context.Background(), e)
-	}, &wtf.SetNewName{})
+	}, &wtf.Renamed{})
 	go subscriptionUpdateDial.Subscribe()
 
 	subscriptionDeleteDial := s.repo.SubscriberSpecificEvent(func(e eventsourcing.Event) {

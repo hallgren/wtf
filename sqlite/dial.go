@@ -519,7 +519,7 @@ func createMembershipFromEvent(ctx context.Context, tx *Tx, event eventsourcing.
 }
 
 func UpdateNameFromEvent(ctx context.Context, tx *Tx, event eventsourcing.Event) {
-	setNameEvent := event.Data.(*wtf.SetNewName)
+	setNameEvent := event.Data.(*wtf.Renamed)
 
 	dialID, err := strconv.Atoi(event.AggregateID)
 	if err != nil {
