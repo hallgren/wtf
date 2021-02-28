@@ -141,6 +141,17 @@ func (s *DialService) MembershipUpdated(ctx context.Context, event eventsourcing
 	return tx.Commit()
 }
 
+func (s *DialService) DialValueUpdated(ctx context.Context, event eventsourcing.Event) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	UpdateDialValueEvent(ctx, tx, event)
+	return tx.Commit()
+}
+
 // CreateDial creates a new dial and assigns the current user as the owner.
 // The owner will automatically be added as a member of the new dial.
 func (s *DialService) CreateDial(ctx context.Context, dial *wtf.Dial) error {
@@ -554,6 +565,10 @@ func DeletedFromEvent(ctx context.Context, tx *Tx, event eventsourcing.Event) {
 
 func UpdateMembershipEvent(ctx context.Context, tx *Tx, event eventsourcing.Event) {
 	updateMembershipEvent := event.Data.(*wtf.MembershipUpdated)
+	dialID, err := strconv.Atoi(event.AggregateID)
+	if err != nil {
+		panic(err)
+	}
 
 	if _, err := tx.ExecContext(ctx, `
 		UPDATE dial_memberships
@@ -566,6 +581,48 @@ func UpdateMembershipEvent(ctx context.Context, tx *Tx, event eventsourcing.Even
 		updateMembershipEvent.ID,
 	); err != nil {
 		panic(err)
+	}
+	// Publish event to all dial members.
+	if err := publishDialEvent(ctx, tx, dialID, wtf.Event{
+		Type: wtf.EventTypeDialMembershipValueChanged,
+		Payload: &wtf.DialMembershipValueChangedPayload{
+			ID:    updateMembershipEvent.ID,
+			Value: updateMembershipEvent.Value,
+		},
+	}); err != nil {
+		panic(fmt.Errorf("publish dial event: %w", err))
+	}
+}
+
+func UpdateDialValueEvent(ctx context.Context, tx *Tx, event eventsourcing.Event) {
+	updateDialValueEvent := event.Data.(*wtf.DialValueUpdated)
+
+	dialID, err := strconv.Atoi(event.AggregateID)
+	if err != nil {
+		panic(err)
+	}
+	// Update value on dial.
+	if _, err := tx.ExecContext(ctx, `
+		UPDATE dials
+		SET value = ?,
+		    updated_at = ?
+		WHERE id = ?
+	`,
+		updateDialValueEvent.Value,
+		(*NullTime)(&event.Timestamp),
+		dialID,
+	); err != nil {
+		panic(err)
+	}
+	// Publish event to notify other members that the value has changed.
+	if err := publishDialEvent(ctx, tx, dialID, wtf.Event{
+		Type: wtf.EventTypeDialValueChanged,
+		Payload: &wtf.DialValueChangedPayload{
+			ID:    dialID,
+			Value: updateDialValueEvent.Value,
+		},
+	}); err != nil {
+		panic(fmt.Errorf("publish dial event: %w", err))
 	}
 }
 

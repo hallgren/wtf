@@ -185,6 +185,7 @@ func (m *Main) Run(ctx context.Context) (err error) {
 	ser.RegisterTypes(&wtf.ESDial{},
 		func() interface{} { return &wtf.Created{} },
 		func() interface{} { return &wtf.SelfMembershipCreated{} },
+		func() interface{} { return &wtf.DialValueUpdated{} },
 		func() interface{} { return &wtf.MembershipCreated{} },
 		func() interface{} { return &wtf.MembershipUpdated{} },
 		func() interface{} { return &wtf.Renamed{} },
@@ -204,6 +205,7 @@ func (m *Main) Run(ctx context.Context) (err error) {
 	authService := sqlite.NewAuthService(m.DB)
 	dialService := sqlite.NewDialService(m.DB)
 	dialServiceES := es.NewDialService(repo, dialService)
+	dialServiceES.EventService = eventService
 	dialMembershipService := sqlite.NewDialMembershipService(m.DB)
 	userService := sqlite.NewUserService(m.DB)
 

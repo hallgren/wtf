@@ -15,8 +15,9 @@ import (
 var _ wtf.DialService = (*DialService)(nil)
 
 type DialService struct {
-	s    *sqlite.DialService
-	repo *eventsourcing.Repository
+	s            *sqlite.DialService
+	repo         *eventsourcing.Repository
+	EventService wtf.EventService
 }
 
 func NewDialService(repo *eventsourcing.Repository, s *sqlite.DialService) *DialService {
@@ -69,6 +70,12 @@ func (s *DialService) Start() {
 		s.s.MembershipUpdated(context.Background(), e)
 	}, &wtf.MembershipUpdated{})
 	go subscriptionMembershipUpdated.Subscribe()
+
+	subscriptionDialValueUpdated := s.repo.SubscriberSpecificEvent(func(e eventsourcing.Event) {
+		// build the read model in the sqlite database
+		s.s.DialValueUpdated(context.Background(), e)
+	}, &wtf.DialValueUpdated{})
+	go subscriptionDialValueUpdated.Subscribe()
 }
 
 func (s *DialService) CreateDial(ctx context.Context, dial *wtf.Dial) error {
