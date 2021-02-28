@@ -173,6 +173,8 @@ func NewDial(userID, value int, name string) (*ESDial, error) {
 		return nil, errors.New("name can't be empty")
 	}
 	dial := ESDial{}
+	// Make use of the SetID func to be able to transform a int based id to a string based
+	// eventsourcing save its ids as string and the wtf.Dial have ids as int's
 	dial.SetID(id())
 
 	// Generate a random invite code.
@@ -180,8 +182,9 @@ func NewDial(userID, value int, name string) (*ESDial, error) {
 	if _, err := io.ReadFull(crypto.Reader, inviteCode); err != nil {
 		return nil, err
 	}
-
 	ic := hex.EncodeToString(inviteCode)
+
+	// creates the first event with dial based data
 	dial.TrackChange(&dial, &Created{OwnerID: userID, Name: name, InviteCode: ic})
 
 	membershipID, err := strconv.Atoi(id())
@@ -189,6 +192,7 @@ func NewDial(userID, value int, name string) (*ESDial, error) {
 		return nil, err
 	}
 
+	// creates the event with the membership bound to the owner creating the dial
 	dial.TrackChange(&dial, &SelfMembershipCreated{ID: membershipID, Value: value, UserID: userID})
 	return &dial, nil
 }
