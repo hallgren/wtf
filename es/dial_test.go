@@ -19,7 +19,7 @@ func TestCreateDial(t *testing.T) {
 	repo := eventsourcing.NewRepository(m, nil)
 	sqlDialSerive := sqlite.NewDialService(db)
 	dialService := es.NewDialService(repo, sqlDialSerive)
-	c := make(chan eventsourcing.Event, 5)
+	c := make(chan eventsourcing.Event, 50)
 	dialService.Subscribe(c)
 	dialService.Start()
 
@@ -66,17 +66,17 @@ func TestCreateDial(t *testing.T) {
 			if !ok {
 				t.Fatalf("expected SelfMembershipCreated was %s", e.Reason)
 			}
-		} else if count == 2 {
+		} else if count == 3 {
 			_, ok := e.Data.(*wtf.Renamed)
 			if !ok {
 				t.Fatalf("expected SetNewName was %s", e.Reason)
 			}
-		} else if count == 3 {
+		} else if count == 4 {
 			_, ok := e.Data.(*wtf.MembershipUpdated)
 			if !ok {
 				t.Fatalf("expected dial membership to be updated was %s", e.Reason)
 			}
-		} else if count == 4 {
+		} else if count == 6 {
 			_, ok := e.Data.(*wtf.Deleted)
 			if !ok {
 				t.Fatalf("expected dial to be deleted was %s", e.Reason)
@@ -84,7 +84,7 @@ func TestCreateDial(t *testing.T) {
 		}
 		count++
 	}
-	if count != 5 {
-		t.Fatalf("expected 5 events got %d", count)
+	if count != 7 {
+		t.Fatalf("expected 7 events got %d", count)
 	}
 }

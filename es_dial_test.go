@@ -13,7 +13,7 @@ func TestCreateDial(t *testing.T) {
 	}
 
 	if dial.Value != 43 {
-		t.Fatalf("epextec Value 43 got %d", 43)
+		t.Fatalf("expected Value 43 got %d", dial.Value)
 	}
 	if dial.UserID != 1 {
 		t.Fatalf("expected userID to be 1 got %d", dial.UserID)
@@ -33,8 +33,8 @@ func TestCreateDial(t *testing.T) {
 	if dial.InviteCode == "" {
 		t.Fatal("expected invite code to be set")
 	}
-	if len(dial.Events()) != 2 {
-		t.Fatalf("expected 2 events got %d", len(dial.Events()))
+	if len(dial.Events()) != 3 {
+		t.Fatalf("expected 3 events got %d", len(dial.Events()))
 	}
 	if dial.Events()[0].Reason != "Created" {
 		t.Fatalf("expected first event to be a Created events was %s", dial.Events()[0].Reason)
@@ -88,8 +88,8 @@ func TestUpdateDial(t *testing.T) {
 		t.Fatal(err)
 	}
 	dial.SetNewName(1, "new name")
-	if len(dial.Events()) != 3 {
-		t.Fatalf("expected 3 events got %d", len(dial.Events()))
+	if len(dial.Events()) != 4 {
+		t.Fatalf("expected 4 events got %d", len(dial.Events()))
 	}
 	if dial.Name != "new name" {
 		t.Fatalf("expected Name to be new name was %s", dial.Name)

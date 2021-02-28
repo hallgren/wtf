@@ -94,6 +94,11 @@ type MembershipUpdated struct {
 	Value int
 }
 
+// DialValueUpdated event when the aggregated dial value is updated
+type DialValueUpdated struct {
+	Value int
+}
+
 // Renamed update the dial name
 type Renamed struct {
 	Name string
@@ -147,16 +152,8 @@ func (d *ESDial) Transition(event eventsourcing.Event) {
 		d.Name = e.Name
 	case *Deleted:
 		d.Deleted = true
-	}
-
-	// calculate the dial value from the Memberships after the dial entity is built from all events
-	// this is calculated on every event but the final event will be the final result of the Value on the dial
-	if len(d.Memberships) > 0 {
-		value := 0
-		for _, m := range d.Memberships {
-			value += m.Value
-		}
-		d.Value = value / len(d.Memberships)
+	case *DialValueUpdated:
+		d.Value = e.Value
 	}
 
 	// update the UpdatedAt to the events timestamp
@@ -194,6 +191,8 @@ func NewDial(userID, value int, name string) (*ESDial, error) {
 
 	// creates the event with the membership bound to the owner creating the dial
 	dial.TrackChange(&dial, &SelfMembershipCreated{ID: membershipID, Value: value, UserID: userID})
+	// update the aggregated dial value
+	dial.TrackChange(&dial, &DialValueUpdated{Value: value})
 	return &dial, nil
 }
 
@@ -227,8 +226,18 @@ func (d *ESDial) SetNewName(userID int, name string) error {
 func (d *ESDial) SetMembershipValue(userID, value int) error {
 	// find membership
 	for _, membership := range d.Memberships {
-		if membership.UserID == userID {
+		if membership.UserID == userID && membership.Value != value {
 			d.TrackChange(d, &MembershipUpdated{ID: membership.ID, Value: value})
+
+			// calculate the dial value from the Memberships
+			if len(d.Memberships) > 0 {
+				value := 0
+				for _, m := range d.Memberships {
+					value += m.Value
+				}
+				v := value / len(d.Memberships)
+				d.TrackChange(d, &DialValueUpdated{Value: v})
+			}
 		}
 	}
 	return nil
@@ -249,6 +258,16 @@ func (d *ESDial) AddMembership(userID int, value int) error {
 		return err
 	}
 	d.TrackChange(d, &MembershipCreated{ID: membershipID, UserID: userID, Value: value})
+
+	// calculate the dial value from the Memberships
+	if len(d.Memberships) > 0 {
+		value := 0
+		for _, m := range d.Memberships {
+			value += m.Value
+		}
+		v := value / len(d.Memberships)
+		d.TrackChange(d, &DialValueUpdated{Value: v})
+	}
 	return nil
 }
 
