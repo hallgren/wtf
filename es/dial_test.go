@@ -66,6 +66,11 @@ func TestCreateDial(t *testing.T) {
 			if !ok {
 				t.Fatalf("expected SelfMembershipCreated was %s", e.Reason)
 			}
+		} else if count == 2 {
+			_, ok := e.Data.(*wtf.DialValueUpdated)
+			if !ok {
+				t.Fatalf("expected DialValueUpdated was %s", e.Reason)
+			}
 		} else if count == 3 {
 			_, ok := e.Data.(*wtf.Renamed)
 			if !ok {
@@ -75,6 +80,11 @@ func TestCreateDial(t *testing.T) {
 			_, ok := e.Data.(*wtf.MembershipUpdated)
 			if !ok {
 				t.Fatalf("expected dial membership to be updated was %s", e.Reason)
+			}
+		} else if count == 5 {
+			_, ok := e.Data.(*wtf.DialValueUpdated)
+			if !ok {
+				t.Fatalf("expected DialValueUpdated was %s", e.Reason)
 			}
 		} else if count == 6 {
 			_, ok := e.Data.(*wtf.Deleted)
