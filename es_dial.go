@@ -228,16 +228,7 @@ func (d *ESDial) SetMembershipValue(userID, value int) error {
 	for _, membership := range d.Memberships {
 		if membership.UserID == userID && membership.Value != value {
 			d.TrackChange(d, &MembershipUpdated{ID: membership.ID, Value: value})
-
-			// calculate the dial value from the Memberships
-			if len(d.Memberships) > 0 {
-				value := 0
-				for _, m := range d.Memberships {
-					value += m.Value
-				}
-				v := value / len(d.Memberships)
-				d.TrackChange(d, &DialValueUpdated{Value: v})
-			}
+			d.TrackChange(d, &DialValueUpdated{Value: d.value()})
 		}
 	}
 	return nil
@@ -258,16 +249,7 @@ func (d *ESDial) AddMembership(userID int, value int) error {
 		return err
 	}
 	d.TrackChange(d, &MembershipCreated{ID: membershipID, UserID: userID, Value: value})
-
-	// calculate the dial value from the Memberships
-	if len(d.Memberships) > 0 {
-		value := 0
-		for _, m := range d.Memberships {
-			value += m.Value
-		}
-		v := value / len(d.Memberships)
-		d.TrackChange(d, &DialValueUpdated{Value: v})
-	}
+	d.TrackChange(d, &DialValueUpdated{Value: d.value()})
 	return nil
 }
 
@@ -280,4 +262,17 @@ func (d *ESDial) MembershipByUserID(userID int) *DialMembership {
 		}
 	}
 	return nil
+}
+
+// value returns the current dial value by all memberships
+func (d *ESDial) value() int {
+	// calculate the dial value from the Memberships
+	if len(d.Memberships) > 0 {
+		value := 0
+		for _, m := range d.Memberships {
+			value += m.Value
+		}
+		return value / len(d.Memberships)
+	}
+	return 0
 }
